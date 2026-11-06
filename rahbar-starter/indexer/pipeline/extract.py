@@ -1,17 +1,42 @@
-"""Stage 1: Extract. PDF (or HTML, or Markdown) to text, page by page."""
+"""Read PDF pages and recover pages without a text layer using OCR."""
 
-from __future__ import annotations
+from pathlib import Path
+import re
 
-from .models import Document
+from .models import Document, Page
 
 
 def extract(path: str, doc_version: str, superseded: bool) -> Document:
-    """Return the document's text page by page.
+    source = Path(path)
+    doc = Document(source.name, doc_version, superseded)
+    if source.suffix.lower() == ".pdf":
+        import pdfplumber
+        import pytesseract
+        from pdf2image import convert_from_path
 
-    Detect pages with no text layer and OCR them; mark those pages ocr=True.
-    The OCR libraries need system packages in your Dockerfile (tesseract-ocr,
-    poppler-utils), not only pip packages.
-    """
-    # STARTER-TODO(3.1): implement extraction. Report in docs/PIPELINE.md which
-    # documents needed OCR, one before-and-after table, and what you could not recover.
-    raise NotImplementedError("extract: see STARTER-TODO(3.1)")
+        with pdfplumber.open(source) as pdf:
+            for number, page in enumerate(pdf.pages, 1):
+                text = page.extract_text() or ""
+                needs_ocr = not text.strip()
+                if needs_ocr:
+                    image, = convert_from_path(path, dpi=250, first_page=number,
+                                               last_page=number)
+                    text = pytesseract.image_to_string(image)
+                doc.pages.append(Page(source.name, number, text, needs_ocr))
+        return doc
+
+    text = source.read_text(encoding="utf-8-sig")
+    if source.suffix.lower() == ".md":
+        text = re.sub(r"\A---\s*\n.*?\n---[ \t]*\n", "", text, count=1, flags=re.S)
+    if source.suffix.lower() == ".html":
+        from bs4 import BeautifulSoup
+
+        html = BeautifulSoup(text, "html.parser")
+        for tag in html(["script", "style", "nav", "footer"]):
+            tag.decompose()
+        for tag in html.find_all(["h1", "h2", "h3", "h4", "h5", "h6"]):
+            tag.insert_before("# " + tag.get_text(" ", strip=True) + "\n")
+            tag.decompose()
+        text = html.get_text("\n", strip=True)
+    doc.pages.append(Page(source.name, 1, text))
+    return doc

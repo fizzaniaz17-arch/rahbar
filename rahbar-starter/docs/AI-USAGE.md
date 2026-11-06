@@ -7,3 +7,6 @@
 
 ChatGPT Codex drafted the development Dockerfiles, Kubernetes manifests,
 dependency readiness and model-pin checks, and the indexing ADR.
+
+ChatGPT Codex also implemented the indexing stages and automated evaluation
+metrics. The live corpus and evaluation runs remain to be verified.
