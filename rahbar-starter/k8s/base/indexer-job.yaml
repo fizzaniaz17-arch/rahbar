@@ -1,0 +1,57 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: indexer
+spec:
+  backoffLimit: 3
+  activeDeadlineSeconds: 600
+  template:
+    metadata:
+      labels:
+        app: indexer
+    spec:
+      serviceAccountName: indexer
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: indexer
+        image: rahbar-indexer:dev
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: '1'
+            memory: 1Gi
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        envFrom:
+        - configMapRef:
+            name: rahbar-config
+        args:
+        - --dummy
+        command:
+        - sh
+        - -ec
+        - for attempt in $(seq 1 60); do if python -c "from pipeline.store import
+          get_client; from pipeline.config import get_settings; get_client(get_settings()).heartbeat()";
+          then exec python -m pipeline.run "$@"; fi; sleep 2; done; exit 1
+        - indexer
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      restartPolicy: OnFailure

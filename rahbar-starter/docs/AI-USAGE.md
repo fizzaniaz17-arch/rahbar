@@ -4,3 +4,6 @@
 
 | Tool | What it wrote or shaped | What we changed afterwards, and why |
 | --- | --- | --- |
+
+ChatGPT Codex drafted the development Dockerfiles, Kubernetes manifests,
+dependency readiness and model-pin checks, and the indexing ADR.
