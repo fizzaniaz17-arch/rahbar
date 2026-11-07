@@ -17,3 +17,6 @@ workflow. The GitHub Actions run and real-model behavior still need verification
 
 ChatGPT Codex added the Redis semantic cache and draft CD workflow, and fixed
 Markdown section detection for the fixture corpus.
+
+ChatGPT Codex prepared the CI fixture evaluation workflow and overlay. The
+fixture uses the starter documents and a smaller Ollama generation model.

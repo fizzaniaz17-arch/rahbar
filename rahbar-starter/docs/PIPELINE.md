@@ -38,3 +38,9 @@ The API compares the query vector with up to eight recent answers for the same
 model and evidence set in Redis. Cache keys include evidence text and citation
 metadata so a changed source creates a different key. Entries expire after
 15 minutes. A cache outage falls back to generation.
+
+The CI fixture job indexes the three supplied fictional documents with Ollama
+embeddings, asks the six golden questions through the running API, and uploads
+measured scores even when the gate fails. Its initial absolute recall@5 floor
+is 0.8. A committed fixture baseline can add the regression check after the
+first measured pass. These scores are separate from the real corpus scores.

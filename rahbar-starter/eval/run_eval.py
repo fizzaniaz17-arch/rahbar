@@ -117,6 +117,8 @@ def main() -> int:
     parser.add_argument("--golden", type=Path, default=HERE / "golden.yaml")
     parser.add_argument("--baseline", type=Path, default=HERE / "baseline.json")
     parser.add_argument("--out", type=Path, default=HERE / "results.json")
+    parser.add_argument("--min-recall5", type=float, default=0,
+                        help="optional absolute recall@5 floor for CI fixtures")
     parser.add_argument("--update-baseline", action="store_true",
                         help="write these results as the new baseline")
     args = parser.parse_args()
@@ -141,6 +143,9 @@ def main() -> int:
     results = summarise(rows)
     baseline = json.loads(args.baseline.read_text()) if args.baseline.exists() else None
     failures = gate(results, baseline)
+    recall5 = results["recall@5"]
+    if recall5 is not None and recall5 < args.min_recall5:
+        failures.append(f"recall@5 {recall5:.3f} is below the {args.min_recall5:.3f} floor")
 
     results["golden"] = str(args.golden)
     results["questions"] = len(rows)
