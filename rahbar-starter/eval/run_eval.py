@@ -91,6 +91,7 @@ def summarise(rows: list[dict]) -> dict:
         citation_total += count
         if row["must_abstain"]:
             abstentions.append(float(response.get("answered_from_context") is False))
+    results["citation_count"] = citation_total
     results["citation_validity"] = valid_total / citation_total if citation_total else None
     results["abstention_correctness"] = mean(abstentions)
     return results
@@ -103,7 +104,9 @@ def gate(results: dict, baseline: dict | None) -> list[str]:
     if recall is None or (previous is not None and previous - recall > MAX_RECALL5_DROP + 1e-12):
         failures.append("recall@5 missing or more than five percentage points below baseline")
     validity = results["citation_validity"]
-    if validity is None or validity < MIN_CITATION_VALIDITY:
+    if validity is None:
+        failures.append("the API returned zero citations across the evaluation set")
+    elif validity < MIN_CITATION_VALIDITY:
         failures.append("citation validity must be at least 95%")
     if results["abstention_correctness"] != REQUIRED_ABSTENTION:
         failures.append("every must-abstain question must be declined")
@@ -149,6 +152,13 @@ def main() -> int:
 
     results["golden"] = str(args.golden)
     results["questions"] = len(rows)
+    results["per_question"] = [
+        {"id": row["id"], "answered_from_context": row["response"]["answered_from_context"],
+         "citation_count": len(row["response"].get("citations", [])),
+         "citation_validity": citation_validity(row["response"]),
+         "recall@5": recall_at_k(row["relevant"], row["response"]["retrieved"], 5)}
+        for row in rows
+    ]
     args.out.write_text(json.dumps(results, indent=2), encoding="utf-8")
     print(f"\nresults written to {args.out}")
     if args.update_baseline and not failures:
