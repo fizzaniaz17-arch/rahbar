@@ -1,0 +1,88 @@
+name: RAHBAR CD
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: rahbar-starter
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r api/requirements-dev.txt -r indexer/requirements-dev.txt pytest-cov
+      - run: cd api && pytest --cov=app --cov-fail-under=60
+      - run: cd indexer && pytest
+
+  build-push:
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish SHA-tagged images
+        working-directory: rahbar-starter
+        run: |
+          test -n "$DOCKERHUB_USERNAME" && test -n "$DOCKERHUB_TOKEN" || {
+            echo 'Set repository variable DOCKERHUB_USERNAME and secret DOCKERHUB_TOKEN.'
+            exit 1
+          }
+          printf '%s' "$DOCKERHUB_TOKEN" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
+          for component in api indexer ui; do
+            image="$DOCKERHUB_USERNAME/rahbar-$component:$GITHUB_SHA"
+            docker build -t "$image" "$component"
+            docker push "$image"
+          done
+
+  deploy:
+    needs: build-push
+    runs-on: ubuntu-latest
+    env:
+      DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
+    defaults:
+      run:
+        working-directory: rahbar-starter
+    steps:
+      - uses: actions/checkout@v4
+      - uses: helm/kind-action@v1.12.0
+        with:
+          cluster_name: rahbar
+      - name: Deploy the published development stack
+        run: |
+          cd k8s/overlays/dev
+          cat >> kustomization.yaml <<YAML
+          images:
+          - name: rahbar-api
+            newName: ${DOCKERHUB_USERNAME}/rahbar-api
+            newTag: ${GITHUB_SHA}
+          - name: rahbar-indexer
+            newName: ${DOCKERHUB_USERNAME}/rahbar-indexer
+            newTag: ${GITHUB_SHA}
+          - name: rahbar-ui
+            newName: ${DOCKERHUB_USERNAME}/rahbar-ui
+            newTag: ${GITHUB_SHA}
+          YAML
+          kubectl apply -k .
+          kubectl -n rahbar rollout status statefulset/chroma --timeout=2m
+          kubectl -n rahbar wait --for=condition=complete job/indexer --timeout=5m
+          kubectl -n rahbar rollout status deployment/api --timeout=3m
+          kubectl -n rahbar rollout status deployment/ui --timeout=3m
+      - name: Verify API response
+        run: |
+          kubectl -n rahbar port-forward service/api 8000:8000 &
+          forward_pid=$!
+          trap 'kill "$forward_pid"' EXIT
+          curl --fail --silent --show-error --retry 10 --retry-connrefused \
+            -H 'Content-Type: application/json' --data '{"question":"What does the stub say?"}' \
+            http://127.0.0.1:8000/api/ask > /tmp/rahbar-response.json
+          jq -e '.provider == "stub" and (.citations | length > 0)' /tmp/rahbar-response.json

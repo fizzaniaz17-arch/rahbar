@@ -17,7 +17,7 @@ def chunk(doc: Document, size: int, overlap: int) -> list[Chunk]:
         groups: list[tuple[str, list[str]]] = [(section, [])]
         for line in page.text.splitlines():
             match = HEADING.match(line)
-            if match:
+            if match and (match["markdown"] or not doc.source.lower().endswith(".md")):
                 section = (match["markdown"] or match["numbered"]).strip()
                 groups.append((section, []))
             else:

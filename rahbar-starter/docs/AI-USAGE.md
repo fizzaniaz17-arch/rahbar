@@ -14,3 +14,6 @@ metrics. The live corpus and evaluation runs remain to be verified.
 ChatGPT Codex added Chroma retrieval, schema-constrained provider calls,
 citation validation, abstention, and the GitHub Actions development smoke
 workflow. The GitHub Actions run and real-model behavior still need verification.
+
+ChatGPT Codex added the Redis semantic cache and draft CD workflow, and fixed
+Markdown section detection for the fixture corpus.

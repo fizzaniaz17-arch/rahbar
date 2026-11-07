@@ -10,7 +10,10 @@ from ..config import Settings
 from ..logjson import request_id_var
 from ..providers.llm.base import LLMProvider
 from ..retrieval.base import Retriever
+from ..retrieval.chroma import ChromaRetriever
 from ..schemas import Answer, AskResponse, Passage, RetrievedRef
+
+from .cache import SemanticCache, cache_key
 
 log = logging.getLogger("rahbar.answer")
 
@@ -42,19 +45,39 @@ def grounded_answer(question: str, passages: list[Passage], provider: LLMProvide
 def answer_question(
     question: str, retriever: Retriever, provider: LLMProvider, settings: Settings
 ) -> AskResponse:
+    vector = None
     try:
-        passages = retriever.retrieve(question, k=settings.top_k)
+        if isinstance(retriever, ChromaRetriever):
+            passages, vector = retriever.retrieve_with_vector(question, settings.top_k)
+        else:
+            passages = retriever.retrieve(question, k=settings.top_k)
     except Exception as exc:
         log.warning("retrieval failed: %s", type(exc).__name__)
         passages = []
     evidence = [passage for passage in passages if passage.score >= settings.relevance_floor]
-    answer = grounded_answer(question, evidence, provider)
+    answer = None
+    cached = False
+    if evidence and vector is not None:
+        cache = SemanticCache(settings)
+        try:
+            key = cache_key(settings, evidence)
+            answer = cache.get(key, vector)
+            cached = answer is not None
+            if answer is None:
+                answer = grounded_answer(question, evidence, provider)
+                if answer.answered_from_context:
+                    cache.put(key, vector, answer)
+        finally:
+            cache.redis.close()
+    if answer is None:
+        answer = grounded_answer(question, evidence, provider)
 
     log.info(
         "answered",
         extra={
             "retriever": retriever.name,
             "provider": provider.name,
+            "cache_hit": cached,
             "top_k": settings.top_k,
             "chunk_ids": [p.chunk_id for p in passages],
             "scores": [round(p.score, 4) for p in passages],

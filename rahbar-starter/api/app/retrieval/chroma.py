@@ -15,6 +15,10 @@ class ChromaRetriever:
         self.settings = settings
 
     def retrieve(self, question: str, k: int) -> list[Passage]:
+        passages, _ = self.retrieve_with_vector(question, k)
+        return passages
+
+    def retrieve_with_vector(self, question: str, k: int) -> tuple[list[Passage], list[float]]:
         import chromadb
         from chromadb.config import Settings as ChromaSettings
 
@@ -41,9 +45,10 @@ class ChromaRetriever:
         distances = result["distances"]
         if documents is None or metadatas is None or distances is None:
             raise ValueError("Chroma query omitted required evidence fields")
-        return [
+        passages = [
             Passage.model_validate(dict(chunk_id=chunk_id, text=doc, source=meta["source"],
                     section=meta["section"], page=meta["page"], score=1 - distance))
             for chunk_id, doc, meta, distance in zip(
                 result["ids"][0], documents[0], metadatas[0], distances[0], strict=True)
         ]
+        return passages, vector

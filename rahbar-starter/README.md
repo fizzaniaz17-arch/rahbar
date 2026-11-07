@@ -31,3 +31,21 @@ For the model-pin check, change `EMBED_MODEL` in the live ConfigMap and
 restart the API without running the indexer. Capture the unready replacement
 pod and the model mismatch in its logs. Reapply the dev overlay and restart
 the API again to restore the shared model pin.
+
+### Publish the development images
+
+Set the GitHub Actions repository variable `DOCKERHUB_USERNAME` and secret
+`DOCKERHUB_TOKEN` (a Docker Hub access token with push access). The CD workflow
+runs on main after merge, publishes the three commit-SHA tags, then checks those
+images on a fresh kind cluster. Its smoke check uses the stub provider. The
+Docker Hub repositories must allow pulls by the kind cluster.
+
+### Run against a real corpus
+
+The production overlay requires a running Ollama Service named `ollama` in
+namespace `rahbar`, backed by pods labeled `app: ollama` with
+`nomic-embed-text` and the configured `LLM_MODEL` preloaded. Provision and
+populate the `rahbar-corpus` PVC with the source files and their metadata
+before starting the indexer. Set commit-SHA image tags in the overlay before
+applying it. Use a separate cluster for this overlay so the initial indexer Job
+has a clean name and the development stack remains available.

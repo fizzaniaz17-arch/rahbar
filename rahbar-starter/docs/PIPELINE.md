@@ -33,3 +33,8 @@ labels. Citation checks match the exact source, section, and page.
 Reindexing upserts new chunks before deleting stale IDs. Readers can see mixed
 old and new chunks during an update. A model or vector dimension change
 requires a separate collection and an explicit configuration switch.
+
+The API compares the query vector with up to eight recent answers for the same
+model and evidence set in Redis. Cache keys include evidence text and citation
+metadata so a changed source creates a different key. Entries expire after
+15 minutes. A cache outage falls back to generation.
