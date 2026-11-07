@@ -94,7 +94,7 @@ jobs:
           kubectl -n rahbar expose deployment ollama --port=11434
           kubectl -n rahbar rollout status deployment/ollama --timeout=5m
           kubectl -n rahbar exec deployment/ollama -- ollama pull nomic-embed-text
-          kubectl -n rahbar exec deployment/ollama -- ollama pull llama3.2:1b
+          kubectl -n rahbar exec deployment/ollama -- ollama pull llama3.2:3b
       - name: Build and load images
         run: |
           for component in api indexer ui; do
@@ -104,6 +104,7 @@ jobs:
       - name: Deploy fixture overlay
         run: |
           kubectl apply -k k8s/overlays/eval
+          kubectl -n rahbar set env deployment/api LLM_MODEL=llama3.2:3b TEMPERATURE=0
           kubectl -n rahbar rollout status statefulset/chroma --timeout=2m
           kubectl -n rahbar wait --for=condition=complete job/indexer --timeout=5m
           kubectl -n rahbar rollout status deployment/api --timeout=3m
