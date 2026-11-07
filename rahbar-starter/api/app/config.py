@@ -39,6 +39,7 @@ class Settings:
 
     # Retrieval and generation
     top_k: int = 5
+    relevance_floor: float = 0.5
     temperature: float = 0.2
     llm_model: str = "llama3.2:3b"
     ollama_url: str = "http://host.minikube.internal:11434"
@@ -60,6 +61,7 @@ def get_settings() -> Settings:
         redis_port=_int("REDIS_PORT", 6379),
         check_dependencies=os.environ.get("CHECK_DEPENDENCIES") == "true",
         top_k=_int("TOP_K", 5),
+        relevance_floor=_float("RELEVANCE_FLOOR", 0.5),
         temperature=_float("TEMPERATURE", 0.2),
         llm_model=os.environ.get("LLM_MODEL", "llama3.2:3b"),
         ollama_url=os.environ.get("OLLAMA_URL", "http://host.minikube.internal:11434"),

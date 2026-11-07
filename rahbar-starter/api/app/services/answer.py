@@ -1,32 +1,54 @@
-"""Turns a question into an AskResponse. This is where the query pipeline lives.
-
-The version below is the bare minimum that works with the stubs: retrieve,
-generate, return. Section 3.2 lists eight steps; this file does two of them.
-"""
+"""Retrieve evidence, validate generated answers, and abstain safely."""
 
 from __future__ import annotations
 
 import logging
 
+import httpx
+
 from ..config import Settings
 from ..logjson import request_id_var
 from ..providers.llm.base import LLMProvider
 from ..retrieval.base import Retriever
-from ..schemas import AskResponse, RetrievedRef
+from ..schemas import Answer, AskResponse, Passage, RetrievedRef
 
 log = logging.getLogger("rahbar.answer")
+
+
+def abstain() -> Answer:
+    return Answer(reasoning="", answer="I couldn't verify an answer from the available sources.",
+                  citations=[], answered_from_context=False, confidence="low")
+
+
+def grounded_answer(question: str, passages: list[Passage], provider: LLMProvider) -> Answer:
+    if not passages:
+        return abstain()
+    allowed = {(p.source, p.section, p.page) for p in passages}
+    for attempt in range(2):
+        try:
+            answer = provider.generate(question, passages)
+            if not answer.answered_from_context:
+                return abstain()
+            if answer.answer.strip() and answer.citations and all(
+                (c.source, c.section, c.page) in allowed for c in answer.citations
+            ):
+                return answer
+            log.warning("provider returned an ungrounded answer", extra={"attempt": attempt + 1})
+        except (ValueError, KeyError, TypeError, httpx.HTTPError) as exc:
+            log.warning("provider output failed: %s", type(exc).__name__)
+    return abstain()
 
 
 def answer_question(
     question: str, retriever: Retriever, provider: LLMProvider, settings: Settings
 ) -> AskResponse:
-    # STARTER-TODO(3.2-3.4): add the production steps around these two calls:
-    # the semantic cache (3.3), the relevance floor and honest abstention (3.4),
-    # validation with one retry and a safe fallback (3.4), and the check that every
-    # citation matches a retrieved passage (3.4). Keep this function thin: put each
-    # step in its own module under services/ so each can be unit-tested.
-    passages = retriever.retrieve(question, k=settings.top_k)
-    answer = provider.generate(question, passages)
+    try:
+        passages = retriever.retrieve(question, k=settings.top_k)
+    except Exception as exc:
+        log.warning("retrieval failed: %s", type(exc).__name__)
+        passages = []
+    evidence = [passage for passage in passages if passage.score >= settings.relevance_floor]
+    answer = grounded_answer(question, evidence, provider)
 
     log.info(
         "answered",

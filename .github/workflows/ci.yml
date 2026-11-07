@@ -1,0 +1,64 @@
+name: RAHBAR CI
+on:
+  push:
+    branches: [dev]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: rahbar-starter
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r api/requirements-dev.txt -r indexer/requirements-dev.txt pytest-cov
+      - run: ruff check api indexer eval corpus
+      - run: cd api && mypy app
+      - run: cd indexer && mypy pipeline
+      - run: cd api && pytest --cov=app --cov-fail-under=60
+      - run: cd indexer && pytest
+
+  cluster-smoke:
+    needs: test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: rahbar-starter
+    steps:
+      - uses: actions/checkout@v4
+      - uses: helm/kind-action@v1.12.0
+        with:
+          cluster_name: rahbar
+      - name: Build and load all three images
+        run: |
+          for component in api indexer ui; do
+            docker build -t "rahbar-$component:dev" "$component"
+            kind load docker-image "rahbar-$component:dev" --name rahbar
+          done
+      - name: Apply development overlay and wait for readiness
+        run: |
+          kubectl apply -k k8s/overlays/dev
+          kubectl -n rahbar wait --for=condition=complete job/indexer --timeout=10m
+          kubectl -n rahbar rollout status deployment/api --timeout=3m
+          kubectl -n rahbar rollout status deployment/ui --timeout=3m
+      - name: Verify stub answer
+        run: |
+          kubectl -n rahbar port-forward service/api 8000:8000 &
+          forward_pid=$!
+          trap 'kill "$forward_pid"' EXIT
+          curl --fail --silent --show-error --retry 10 --retry-connrefused \
+            -H 'Content-Type: application/json' --data '{"question":"What does the stub say?"}' \
+            http://127.0.0.1:8000/api/ask > /tmp/rahbar-response.json
+          jq -e '.provider == "stub" and (.citations | length > 0)' /tmp/rahbar-response.json
+      - name: Diagnostics
+        if: always()
+        run: |
+          kubectl -n rahbar get pods,deploy,jobs,pvc,svc,endpoints,hpa
+          kubectl -n rahbar logs job/indexer --tail=40 || true

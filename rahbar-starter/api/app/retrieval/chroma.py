@@ -1,9 +1,8 @@
-"""The real retriever. Yours to build (sections 3.2 and 4.4).
-
-Connection details are already here; the query is not.
-"""
+"""Retrieve current policy passages using the configured embedding model."""
 
 from __future__ import annotations
+
+import httpx
 
 from ..config import Settings
 from ..schemas import Passage
@@ -13,16 +12,38 @@ class ChromaRetriever:
     name = "chroma"
 
     def __init__(self, settings: Settings) -> None:
-        import chromadb  # the thin client, from chromadb-client in requirements.txt
-        from chromadb.config import Settings as ChromaSettings
-
         self.settings = settings
-        self.client = chromadb.HttpClient(host=settings.chroma_host, port=settings.chroma_port,
-                                          settings=ChromaSettings(anonymized_telemetry=False))
 
     def retrieve(self, question: str, k: int) -> list[Passage]:
-        # STARTER-TODO(3.2): embed the question with settings.embed_model (the same model
-        # the indexer used), query the collection for the top k, filter out superseded
-        # documents, and map each hit to a Passage. Chroma returns cosine *distance*;
-        # Passage.score expects similarity, so convert: similarity = 1 - distance.
-        raise NotImplementedError("ChromaRetriever.retrieve: see STARTER-TODO(3.2)")
+        import chromadb
+        from chromadb.config import Settings as ChromaSettings
+
+        settings = self.settings
+        client = chromadb.HttpClient(host=settings.chroma_host, port=settings.chroma_port,
+                                      settings=ChromaSettings(anonymized_telemetry=False))
+        collection = client.get_collection(settings.collection)
+        metadata = collection.metadata or {}
+        if metadata.get("embed_model") != settings.embed_model:
+            raise ValueError("embedding model differs from the Chroma collection")
+        response = httpx.post(
+            f"{settings.ollama_url.rstrip('/')}/api/embed",
+            json={"model": settings.embed_model, "input": [question]}, timeout=30,
+        )
+        response.raise_for_status()
+        vector = response.json()["embeddings"][0]
+        if len(vector) != metadata.get("dimension"):
+            raise ValueError("query vector dimension differs from the Chroma collection")
+        result = collection.query(query_embeddings=[vector], n_results=k,
+                                  where={"superseded": False},
+                                  include=["documents", "metadatas", "distances"])
+        documents = result["documents"]
+        metadatas = result["metadatas"]
+        distances = result["distances"]
+        if documents is None or metadatas is None or distances is None:
+            raise ValueError("Chroma query omitted required evidence fields")
+        return [
+            Passage.model_validate(dict(chunk_id=chunk_id, text=doc, source=meta["source"],
+                    section=meta["section"], page=meta["page"], score=1 - distance))
+            for chunk_id, doc, meta, distance in zip(
+                result["ids"][0], documents[0], metadatas[0], distances[0], strict=True)
+        ]
