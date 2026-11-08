@@ -1,33 +1,25 @@
 # Corpus
 
-<!-- STARTER-TODO(2): fill every row, then delete this comment. -->
+The corpus consists of six public FAST-NUCES documents, including four PDFs
+with 156 PDF pages in total. The two HTML pages are separate documents. All
+six files matched the SHA-256 hashes in `corpus/MANIFEST.md`.
 
-Source: FAST-NUCES public website / our own documents (pick one) · Documents: ? · Pages: ?
+| # | Required property | Source and verification |
+| --- | --- | --- |
+| 1 | Six documents and at least 40 pages | Academic Rules 2023 (26 pages), Academic Rules 2026 (58 pages), Student Handbook 2026 (64 pages), ORIC Faculty Entrepreneurship policy (8 pages), Fee Structure (HTML) and Academic Grading (HTML). |
+| 2 | Two editions of a policy | Undergraduate Academic Rules, August 2023 and June 2026. Metadata records versions `2023-08` and `2026-06`, with `superseded: true` on the 2023 edition. |
+| 3 | Image-only scan | ORIC Faculty Entrepreneurship policy. `pdffonts` returned no fonts, and `pdftotext` returned only page separators. The indexer used OCR on all eight pages. The August 2023 academic rules also needed OCR on 24 of 26 pages. |
+| 4 | Meaningful table | Fall 2026 Fee Structure links BS tuition to PKR 12,000 per credit hour. The grading page has grade-to-point tables. |
+| 5 | Long definitions | The ORIC policy on PDF page 1 defines faculty entrepreneurship through several kinds of involvement, including governance and equity. The Student Handbook's AI policy also explains acceptable and unacceptable use across multiple pages. |
+| 6 | Deliberately absent topic | Islamabad hostel room allocation and room changes. The Student Handbook mentions hostel facilities. The indexed sources provide neither a room-allocation points formula nor a room-change form number and deadline. |
+| 7 | Exact terms | Clause 1.21 of Academic Rules 2026 sets the attendance requirement and its HoD exception. The grading table gives 3.33 points for a BS B+. |
 
-| # | Required property | Document(s) that provide it | Evidence or notes |
-| --- | --- | --- | --- |
-| 1 | At least 6 documents, 40 pages | | |
-| 2 | Two versions of one policy | | Which supersedes which, and how your metadata records it |
-| 3 | Scanned, image-only PDF | | `pdffonts` output, or how you proved it has no text layer |
-| 4 | A table with real information | | |
-| 5 | Long definitions | | |
-| 6 | A deliberately absent topic | | What you left out, and why a user would plausibly ask about it |
-| 7 | Exact-term content | | Clause numbers, codes, thresholds, fees |
+The August 2023 rules describe an optional summer semester of eight to nine
+weeks and permit a new elective when needed to graduate (PDF page 20). The
+June 2026 edition specifies eight weeks and limits summer offerings to repeat
+courses (PDF page 28, clauses 6.1 and 6.2). These differences support q09 and q10
+in `eval/golden.yaml`, which ask about the current edition.
 
-## FAST-NUCES source selection for the real evaluation
-
-| Requirement | Selected source and verification status |
-| --- | --- |
-| At least six documents and 40 PDF pages | Six candidate sources are listed in `corpus/sources.yaml`. The June 2026 academic rules PDF has 58 pages. Verify the count against downloaded files. |
-| Two editions of the same policy | August 2023 and June 2026 undergraduate academic rules. The historical edition is marked superseded. Compare the editions before writing version-sensitive golden questions. |
-| Scanned PDF | ORIC Faculty Entrepreneurship and Technical Start-ups policy. Verify the page text layers and record OCR results after downloading. |
-| Meaningful table | The official Fee Structure and Academic Grading pages are selected for fee and grade-point tables. |
-| Long definitions | The June 2026 Student Handbook is selected for its GenAI policy. Verify that section in the downloaded file. |
-| Deliberately absent topic | Detailed hostel eligibility and room allocation rules. The Transport and Hostel Facilities prospectus is excluded. Verify the indexed text has no answer before labeling these questions must-abstain. |
-| Exact terms | The 2026 academic rules include clause 1.21 on attendance and clause 5.4 on the CGPA threshold. |
-
-The university's Downloads and Islamabad Rules and Regulations pages list the
-academic documents. The university's ORIC policies page lists the scanned PDF
-candidate. Record successful downloads and SHA-256 hashes with
-`python corpus/fetch.py` and `python corpus/fetch.py --verify` from the project
-directory. The manifest and real-corpus results must reflect an actual run.
+Run `python corpus/fetch.py` from the project root to fetch the six configured
+sources and `python corpus/fetch.py --verify` to check their hashes. The source
+files live in the gitignored `corpus/raw/` directory.

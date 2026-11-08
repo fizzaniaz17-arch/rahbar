@@ -19,7 +19,8 @@ def chunk(doc: Document, size: int, overlap: int) -> list[Chunk]:
             match = HEADING.match(line)
             if match and (match["markdown"] or not doc.source.lower().endswith(".md")):
                 section = (match["markdown"] or match["numbered"]).strip()
-                groups.append((section, []))
+                # A numbered PDF line can contain the start or entirety of a rule.
+                groups.append((section, [line] if match["numbered"] else []))
             else:
                 groups[-1][1].append(line)
         for group, (heading, lines) in enumerate(groups):
