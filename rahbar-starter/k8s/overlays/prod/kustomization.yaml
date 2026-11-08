@@ -22,6 +22,12 @@ patches:
     - op: replace
       path: /data/CHROMA_COLLECTION
       value: rahbar-real
+    - op: replace
+      path: /data/CHUNK_SIZE
+      value: '250'
+    - op: replace
+      path: /data/CHUNK_OVERLAP
+      value: '25'
     - op: add
       path: /data/OLLAMA_URL
       value: http://ollama:11434

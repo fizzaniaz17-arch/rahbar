@@ -1,5 +1,6 @@
 """Read PDF pages and recover pages without a text layer using OCR."""
 
+from contextlib import closing
 from pathlib import Path
 import re
 
@@ -17,11 +18,13 @@ def extract(path: str, doc_version: str, superseded: bool) -> Document:
         with pdfplumber.open(source) as pdf:
             for number, page in enumerate(pdf.pages, 1):
                 text = page.extract_text() or ""
+                page.close()
                 needs_ocr = not text.strip()
                 if needs_ocr:
                     image, = convert_from_path(path, dpi=250, first_page=number,
                                                last_page=number)
-                    text = pytesseract.image_to_string(image)
+                    with closing(image):
+                        text = pytesseract.image_to_string(image)
                 doc.pages.append(Page(source.name, number, text, needs_ocr))
         return doc
 
