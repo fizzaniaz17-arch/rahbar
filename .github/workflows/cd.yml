@@ -54,9 +54,14 @@ jobs:
         working-directory: rahbar-starter
     steps:
       - uses: actions/checkout@v4
-      - uses: helm/kind-action@v1.12.0
-        with:
-          cluster_name: rahbar
+      - name: Build kind and start cluster
+        run: |
+          kind_src="$(go mod download -json sigs.k8s.io/kind@v0.26.0 | jq -er .Dir)"
+          kind_bin="$RUNNER_TEMP/rahbar-kind"
+          mkdir -p "$kind_bin"
+          go -C "$kind_src" build -mod=readonly -o "$kind_bin/kind" .
+          "$kind_bin/kind" create cluster --name rahbar --wait 2m
+          echo "$kind_bin" >> "$GITHUB_PATH"
       - name: Deploy the published development stack
         run: |
           cd k8s/overlays/dev
