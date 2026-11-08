@@ -11,6 +11,12 @@ patches:
     - op: add
       path: /data/LLM_MODEL
       value: llama3.2:1b
+    - op: replace
+      path: /data/CHUNK_SIZE
+      value: '400'
+    - op: replace
+      path: /data/CHUNK_OVERLAP
+      value: '50'
 - target:
     kind: Job
     name: indexer
