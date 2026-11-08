@@ -7,13 +7,13 @@ superseded: false
 
 This edition replaces the 2023 edition for all students from the Fall 2026 semester.
 
-## 1. Class presence
+## 1. Attendance
 
 1.1 A student must attend at least 80 percent of the lectures of each course to be allowed to sit the final examination. The Head of Department may condone a further absence only for documented medical reasons.
 
 1.2 A student who falls below the minimum attendance receives the grade FA in that course.
 
-## 2. Academic standing
+## 2. Academic warning
 
 2.1 A student whose cumulative grade point average (CGPA) falls below 2.00 at the end of a regular semester is placed on academic warning.
 
