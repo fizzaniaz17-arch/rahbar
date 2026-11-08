@@ -120,6 +120,8 @@ def main() -> int:
     parser.add_argument("--golden", type=Path, default=HERE / "golden.yaml")
     parser.add_argument("--baseline", type=Path, default=HERE / "baseline.json")
     parser.add_argument("--out", type=Path, default=HERE / "results.json")
+    parser.add_argument("--responses", type=Path,
+                        help="optional per-question responses for manual review")
     parser.add_argument("--min-recall5", type=float, default=0,
                         help="optional absolute recall@5 floor for CI fixtures")
     parser.add_argument("--update-baseline", action="store_true",
@@ -143,6 +145,8 @@ def main() -> int:
             })
             print(f"  {q['id']:<5} {rows[-1]['seconds']:>6.2f}s  {q['question'][:60]}")
 
+    if args.responses:
+        args.responses.write_text(json.dumps(rows, indent=2), encoding="utf-8")
     results = summarise(rows)
     baseline = json.loads(args.baseline.read_text()) if args.baseline.exists() else None
     failures = gate(results, baseline)
