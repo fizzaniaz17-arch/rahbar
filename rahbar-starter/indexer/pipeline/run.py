@@ -75,6 +75,7 @@ def run_pipeline(settings: IndexerSettings) -> int:
         raise SystemExit(f"no documents found in {settings.corpus_dir}")
     all_chunks: list[Chunk] = []
     for path, doc_version, superseded in documents:
+        log("extracting", source=path.name)
         doc = clean(extract(str(path), doc_version, superseded))
         pieces = chunk(doc, settings.chunk_size, settings.chunk_overlap)
         log("chunked", source=path.name, chunks=len(pieces))

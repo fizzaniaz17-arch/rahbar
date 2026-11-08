@@ -171,7 +171,11 @@ def trial(template, size, overlap, output):
     job = deepcopy(template)
     job["metadata"]["name"] = job_name
     job["spec"]["activeDeadlineSeconds"] = 3600
-    container, = job["spec"]["template"]["spec"]["containers"]
+    # Preserve the failed pod and its exit reason for an evaluation attempt.
+    job["spec"]["backoffLimit"] = 0
+    pod_spec = job["spec"]["template"]["spec"]
+    pod_spec["restartPolicy"] = "Never"
+    container, = pod_spec["containers"]
     container["env"] = [{"name": name, "value": value} for name, value in {
         "CHROMA_COLLECTION": collection, "CHUNK_SIZE": str(size),
         "CHUNK_OVERLAP": str(overlap), "OMP_THREAD_LIMIT": "1",
@@ -180,9 +184,20 @@ def trial(template, size, overlap, output):
     apply(job)
     try:
         wait_for_index(job_name)
+    except (RuntimeError, TimeoutError, subprocess.CalledProcessError):
+        selector = f"batch.kubernetes.io/job-name={job_name}"
+        details = kube("describe", "pods", "-l", selector, stdout=subprocess.PIPE,
+                       stderr=subprocess.STDOUT, check=False).stdout
+        diagnostics = output / f"indexer-{suffix}-pod.txt"
+        diagnostics.write_bytes(details)
+        print(f"Failed pod details: {diagnostics}", flush=True)
+        raise
     finally:
-        log = kube("logs", f"job/{job_name}", capture_output=True, check=False).stdout
-        (output / f"indexer-{suffix}.log").write_bytes(log)
+        log = kube("logs", f"job/{job_name}", stdout=subprocess.PIPE,
+                   stderr=subprocess.STDOUT, check=False).stdout
+        log_path = output / f"indexer-{suffix}.log"
+        log_path.write_bytes(log)
+        print(f"Indexer log: {log_path}", flush=True)
     counts = [json.loads(line) for line in log.splitlines() if b'"indexer finished"' in line]
     if not counts:
         raise RuntimeError(f"{job_name} finished without recording a chunk count")
@@ -223,8 +238,11 @@ def main():
         if shutil.which(program) is None:
             parser.error(f"{program} is missing from PATH. Reopen PowerShell after installing it.")
     files = corpus_files()
-    run("minikube", "start", "-p", PROFILE, "--driver=docker", "--keep-context",
-        "--memory", args.memory, "--cpus", args.cpus)
+    ready = kube("--request-timeout=5s", "get", "--raw=/readyz",
+                 capture_output=True, check=False)
+    if ready.returncode != 0:
+        run("minikube", "start", "-p", PROFILE, "--driver=docker", "--keep-context",
+            "--memory", args.memory, "--cpus", args.cpus)
     for component in ("api", "indexer", "ui"):
         image = f"rahbar-{component}:{IMAGE_TAG}"
         run("docker", "build", "-t", image, component)
