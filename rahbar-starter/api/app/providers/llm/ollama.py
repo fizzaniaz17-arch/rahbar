@@ -31,7 +31,7 @@ class OllamaProvider:
             json={"model": self.settings.llm_model, "messages": messages(question, passages, numbered_citations=True),
                   "format": OllamaAnswer.model_json_schema(), "stream": False,
                   "options": {"temperature": self.settings.temperature}},
-            timeout=60,
+            timeout=self.settings.ollama_timeout,
         )
         response.raise_for_status()
         result = OllamaAnswer.model_validate_json(response.json()["message"]["content"])

@@ -139,7 +139,7 @@ def evaluate(port, destination):
     result = subprocess.run(
         [sys.executable, "-u", "eval/run_eval.py", "--api", f"http://127.0.0.1:{port}",
          "--baseline", str(destination.parent / "no-trial-baseline.json"),
-         "--out", str(destination), "--responses", str(destination.with_name(
+         "--timeout", "420", "--out", str(destination), "--responses", str(destination.with_name(
              destination.name.replace("results-", "responses-", 1)))],
         cwd=ROOT,
     )
@@ -164,7 +164,7 @@ def wait_for_index(job_name):
     raise TimeoutError(f"{job_name} did not finish within 61 minutes")
 
 
-def trial(template, size, overlap, output):
+def trial(template, size, overlap, output, reuse_completed_indexes=False):
     suffix = f"{size}-{overlap}"
     job_name = f"indexer-{suffix}"
     collection = f"rahbar-real-{suffix}"
@@ -180,8 +180,21 @@ def trial(template, size, overlap, output):
         "CHROMA_COLLECTION": collection, "CHUNK_SIZE": str(size),
         "CHUNK_OVERLAP": str(overlap), "OMP_THREAD_LIMIT": "1",
     }.items()]
-    kube("delete", "job", job_name, "--ignore-not-found")
-    apply(job)
+    existing = None
+    if reuse_completed_indexes:
+        saved = kube("get", "job", job_name, "--ignore-not-found", "-o", "json",
+                     capture_output=True).stdout
+        if saved.strip():
+            existing = json.loads(saved)
+    completed = existing and any(
+        item["type"] == "Complete" and item["status"] == "True"
+        for item in existing.get("status", {}).get("conditions", [])
+    )
+    if completed:
+        print(f"Reusing the index from {job_name}", flush=True)
+    else:
+        kube("delete", "job", job_name, "--ignore-not-found")
+        apply(job)
     try:
         wait_for_index(job_name)
     except (RuntimeError, TimeoutError, subprocess.CalledProcessError):
@@ -202,7 +215,8 @@ def trial(template, size, overlap, output):
     if not counts:
         raise RuntimeError(f"{job_name} finished without recording a chunk count")
 
-    kube("set", "env", "deployment/api", f"CHROMA_COLLECTION={collection}")
+    kube("set", "env", "deployment/api", f"CHROMA_COLLECTION={collection}",
+         "OLLAMA_TIMEOUT=180")
     kube("rollout", "status", "deployment/api", "--timeout=8m")
     destination = output / f"results-{suffix}.json"
     with subprocess.Popen(
@@ -233,6 +247,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--memory", default="6144mb")
     parser.add_argument("--cpus", default="4")
+    parser.add_argument("--reuse-completed-indexes", action="store_true",
+                        help="reuse completed Jobs from a retry with the same corpus and settings")
     args = parser.parse_args()
     for program in ("docker", "minikube", "kubectl"):
         if shutil.which(program) is None:
@@ -254,7 +270,7 @@ def main():
     template = prepare_stack(files)
     summary = []
     for size, overlap in TRIALS:
-        summary.append(trial(template, size, overlap, output))
+        summary.append(trial(template, size, overlap, output, args.reuse_completed_indexes))
         print(json.dumps(summary[-1], indent=2), flush=True)
         (output / "summary.json").write_text(json.dumps(summary, indent=2) + "\n",
                                              encoding="utf-8")
