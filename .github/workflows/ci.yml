@@ -35,8 +35,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build kind and start cluster
         run: |
-          go install sigs.k8s.io/kind@v0.26.0
-          kind_bin="$(go env GOPATH)/bin"
+          kind_src="$(go mod download -json sigs.k8s.io/kind@v0.26.0 | jq -er .Dir)"
+          kind_bin="$RUNNER_TEMP/rahbar-kind"
+          mkdir -p "$kind_bin"
+          go -C "$kind_src" build -mod=readonly -o "$kind_bin/kind" .
           "$kind_bin/kind" create cluster --name rahbar --wait 2m
           echo "$kind_bin" >> "$GITHUB_PATH"
       - name: Build and load all three images
@@ -84,8 +86,10 @@ jobs:
           python-version: '3.12'
       - name: Build kind and start cluster
         run: |
-          go install sigs.k8s.io/kind@v0.26.0
-          kind_bin="$(go env GOPATH)/bin"
+          kind_src="$(go mod download -json sigs.k8s.io/kind@v0.26.0 | jq -er .Dir)"
+          kind_bin="$RUNNER_TEMP/rahbar-kind"
+          mkdir -p "$kind_bin"
+          go -C "$kind_src" build -mod=readonly -o "$kind_bin/kind" .
           "$kind_bin/kind" create cluster --name rahbar --wait 2m
           echo "$kind_bin" >> "$GITHUB_PATH"
       - name: Prepare fixture corpus and Ollama models
