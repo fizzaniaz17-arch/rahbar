@@ -33,9 +33,12 @@ jobs:
         working-directory: rahbar-starter
     steps:
       - uses: actions/checkout@v4
-      - uses: helm/kind-action@v1.15.2
-        with:
-          cluster_name: rahbar
+      - name: Build kind and start cluster
+        run: |
+          go install sigs.k8s.io/kind@v0.26.0
+          kind_bin="$(go env GOPATH)/bin"
+          "$kind_bin/kind" create cluster --name rahbar --wait 2m
+          echo "$kind_bin" >> "$GITHUB_PATH"
       - name: Build and load all three images
         run: |
           for component in api indexer ui; do
@@ -79,9 +82,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - uses: helm/kind-action@v1.15.2
-        with:
-          cluster_name: rahbar
+      - name: Build kind and start cluster
+        run: |
+          go install sigs.k8s.io/kind@v0.26.0
+          kind_bin="$(go env GOPATH)/bin"
+          "$kind_bin/kind" create cluster --name rahbar --wait 2m
+          echo "$kind_bin" >> "$GITHUB_PATH"
       - name: Prepare fixture corpus and Ollama models
         run: |
           pip install httpx==0.28.1 pyyaml==6.0.2
