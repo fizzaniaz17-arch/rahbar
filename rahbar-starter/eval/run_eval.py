@@ -48,28 +48,69 @@ def ask(client: httpx.Client, api: str, question: str) -> dict:
 def recall_at_k(relevant: list[dict], retrieved: list[dict], k: int) -> float | None:
     """Fraction of the relevant (source, section) pairs found in the top k retrieved.
     Return None when the question has no relevant passages (must-abstain questions)."""
-    # STARTER-TODO(5.2): implement. Decide how you match sections and say so in PIPELINE.md.
-    raise NotImplementedError("recall_at_k: see STARTER-TODO(5.2)")
+    def pairs(passages: list[dict]) -> set[tuple[str, str]]:
+        return {(item["source"], " ".join(item["section"].split()).casefold())
+                for item in passages}
+
+    expected = pairs(relevant)
+    return len(expected & pairs(retrieved[:k])) / len(expected) if expected else None
 
 
 def citation_validity(response: dict) -> float | None:
-    """Fraction of the response's citations that match a passage in response['retrieved'].
-    Return None when there are no citations."""
-    # STARTER-TODO(5.3): implement.
-    raise NotImplementedError("citation_validity: see STARTER-TODO(5.3)")
+    citations = response.get("citations", [])
+    if not citations:
+        return None
+    retrieved = {(item["source"], item["section"], item["page"])
+                 for item in response.get("retrieved", [])}
+    return sum((item["source"], item["section"], item["page"]) in retrieved
+               for item in citations) / len(citations)
 
 
 def summarise(rows: list[dict]) -> dict:
-    """Overall recall@3, recall@5, citation validity and abstention correctness, plus
-    recall@5 broken down by question type. This dict becomes results.json."""
-    # STARTER-TODO(5.2, 5.3): implement.
-    raise NotImplementedError("summarise: see STARTER-TODO(5.2, 5.3)")
+    def mean(values: list[float]) -> float | None:
+        return sum(values) / len(values) if values else None
+
+    by_type: dict[str, dict] = {}
+    results: dict = {"by_type": by_type}
+    for k in (3, 5):
+        key = f"recall@{k}"
+        scored = [(row["type"], score) for row in rows
+                  if (score := recall_at_k(row["relevant"],
+                                           row["response"]["retrieved"], k)) is not None]
+        results[key] = mean([score for _, score in scored])
+        for kind in sorted({kind for kind, _ in scored}):
+            by_type.setdefault(kind, {})[key] = mean(
+                [score for row_type, score in scored if row_type == kind])
+    valid_total = 0.0
+    citation_total = 0
+    abstentions = []
+    for row in rows:
+        response = row["response"]
+        count = len(response.get("citations", []))
+        valid_total += (citation_validity(response) or 0) * count
+        citation_total += count
+        if row["must_abstain"]:
+            abstentions.append(float(response.get("answered_from_context") is False))
+    results["citation_count"] = citation_total
+    results["citation_validity"] = valid_total / citation_total if citation_total else None
+    results["abstention_correctness"] = mean(abstentions)
+    return results
 
 
 def gate(results: dict, baseline: dict | None) -> list[str]:
-    """Return one message per failed gate (section 5.4); an empty list means pass."""
-    # STARTER-TODO(5.4): implement, using the three constants at the top of this file.
-    raise NotImplementedError("gate: see STARTER-TODO(5.4)")
+    failures = []
+    recall = results["recall@5"]
+    previous = baseline.get("recall@5") if baseline else None
+    if recall is None or (previous is not None and previous - recall > MAX_RECALL5_DROP + 1e-12):
+        failures.append("recall@5 missing or more than five percentage points below baseline")
+    validity = results["citation_validity"]
+    if validity is None:
+        failures.append("the API returned zero citations across the evaluation set")
+    elif validity < MIN_CITATION_VALIDITY:
+        failures.append("citation validity must be at least 95%")
+    if results["abstention_correctness"] != REQUIRED_ABSTENTION:
+        failures.append("every must-abstain question must be declined")
+    return failures
 
 
 def main() -> int:
@@ -79,6 +120,8 @@ def main() -> int:
     parser.add_argument("--golden", type=Path, default=HERE / "golden.yaml")
     parser.add_argument("--baseline", type=Path, default=HERE / "baseline.json")
     parser.add_argument("--out", type=Path, default=HERE / "results.json")
+    parser.add_argument("--min-recall5", type=float, default=0,
+                        help="optional absolute recall@5 floor for CI fixtures")
     parser.add_argument("--update-baseline", action="store_true",
                         help="write these results as the new baseline")
     args = parser.parse_args()
@@ -100,19 +143,25 @@ def main() -> int:
             })
             print(f"  {q['id']:<5} {rows[-1]['seconds']:>6.2f}s  {q['question'][:60]}")
 
-    try:
-        results = summarise(rows)
-        baseline = json.loads(args.baseline.read_text()) if args.baseline.exists() else None
-        failures = gate(results, baseline)
-    except NotImplementedError as exc:
-        print(f"\nnot implemented yet: {exc}")
-        return 2
+    results = summarise(rows)
+    baseline = json.loads(args.baseline.read_text()) if args.baseline.exists() else None
+    failures = gate(results, baseline)
+    recall5 = results["recall@5"]
+    if recall5 is not None and recall5 < args.min_recall5:
+        failures.append(f"recall@5 {recall5:.3f} is below the {args.min_recall5:.3f} floor")
 
     results["golden"] = str(args.golden)
     results["questions"] = len(rows)
+    results["per_question"] = [
+        {"id": row["id"], "answered_from_context": row["response"]["answered_from_context"],
+         "citation_count": len(row["response"].get("citations", [])),
+         "citation_validity": citation_validity(row["response"]),
+         "recall@5": recall_at_k(row["relevant"], row["response"]["retrieved"], 5)}
+        for row in rows
+    ]
     args.out.write_text(json.dumps(results, indent=2), encoding="utf-8")
     print(f"\nresults written to {args.out}")
-    if args.update_baseline:
+    if args.update_baseline and not failures:
         args.baseline.write_text(json.dumps(results, indent=2), encoding="utf-8")
         print(f"baseline updated: {args.baseline}")
 

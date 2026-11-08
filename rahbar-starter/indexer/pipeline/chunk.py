@@ -1,14 +1,35 @@
-"""Stage 3: Chunk. Structure-aware, with overlap."""
+"""Split pages on headings, then apply overlapping word windows."""
 
-from __future__ import annotations
+import hashlib
+import re
 
 from .models import Chunk, Document
 
+HEADING = re.compile(r"^\s*(?:#{1,6}\s+(?P<markdown>.+)|(?P<numbered>\d+(?:\.\d+)*[.)]?\s+\S.{0,110}))$")
+
 
 def chunk(doc: Document, size: int, overlap: int) -> list[Chunk]:
-    """Split on sections, then paragraphs, then sentences, keeping each chunk under
-    `size` tokens, with `overlap` tokens shared between neighbours. Every chunk keeps
-    the section heading it sits under, its page, doc_version and superseded."""
-    # STARTER-TODO(3.1): implement chunking. Measure three (size, overlap) settings
-    # against recall@5 and put the table in docs/PIPELINE.md.
-    raise NotImplementedError("chunk: see STARTER-TODO(3.1)")
+    if size <= 0 or not 0 <= overlap < size:
+        raise ValueError("chunk size must be positive and overlap must be smaller than size")
+    chunks: list[Chunk] = []
+    section = "Document"
+    for page in doc.pages:
+        groups: list[tuple[str, list[str]]] = [(section, [])]
+        for line in page.text.splitlines():
+            match = HEADING.match(line)
+            if match and (match["markdown"] or not doc.source.lower().endswith(".md")):
+                section = (match["markdown"] or match["numbered"]).strip()
+                groups.append((section, []))
+            else:
+                groups[-1][1].append(line)
+        for group, (heading, lines) in enumerate(groups):
+            words = " ".join(lines).split()
+            for offset in range(0, len(words), size - overlap):
+                key = f"{doc.source}:{doc.doc_version}:{page.page}:{group}:{offset}"
+                chunks.append(Chunk(
+                    hashlib.sha256(key.encode()).hexdigest(), " ".join(words[offset:offset + size]),
+                    doc.source, heading, page.page, doc.doc_version, doc.superseded,
+                ))
+                if offset + size >= len(words):
+                    break
+    return chunks

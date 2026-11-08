@@ -1,0 +1,136 @@
+name: RAHBAR CI
+on:
+  push:
+    branches: [dev]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: rahbar-starter
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r api/requirements-dev.txt -r indexer/requirements-dev.txt pytest-cov
+      - run: ruff check api indexer eval corpus
+      - run: cd api && mypy app
+      - run: cd indexer && mypy pipeline
+      - run: cd api && pytest --cov=app --cov-fail-under=60
+      - run: cd indexer && pytest
+
+  cluster-smoke:
+    needs: test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: rahbar-starter
+    steps:
+      - uses: actions/checkout@v4
+      - uses: helm/kind-action@v1.12.0
+        with:
+          cluster_name: rahbar
+      - name: Build and load all three images
+        run: |
+          for component in api indexer ui; do
+            docker build -t "rahbar-$component:dev" "$component"
+            kind load docker-image "rahbar-$component:dev" --name rahbar
+          done
+      - name: Apply development overlay and wait for readiness
+        run: |
+          kubectl apply -k k8s/overlays/dev
+          kubectl -n rahbar rollout status statefulset/chroma --timeout=2m
+          kubectl -n rahbar wait --for=condition=complete job/indexer --timeout=10m
+          kubectl -n rahbar rollout status deployment/api --timeout=3m
+          kubectl -n rahbar rollout status deployment/ui --timeout=3m
+      - name: Verify stub answer
+        run: |
+          kubectl -n rahbar port-forward service/api 8000:8000 &
+          forward_pid=$!
+          trap 'kill "$forward_pid"' EXIT
+          curl --fail --silent --show-error --retry 10 --retry-connrefused \
+            -H 'Content-Type: application/json' --data '{"question":"What does the stub say?"}' \
+            http://127.0.0.1:8000/api/ask > /tmp/rahbar-response.json
+          jq -e '.provider == "stub" and (.citations | length > 0)' /tmp/rahbar-response.json
+      - name: Diagnostics
+        if: always()
+        run: |
+          kubectl -n rahbar get pods,deploy,jobs,pvc,svc,endpoints,hpa
+          kubectl -n rahbar describe pod chroma-0 || true
+          kubectl -n rahbar logs pod/chroma-0 --previous --tail=80 || true
+          kubectl -n rahbar logs pod/chroma-0 --tail=80 || true
+          kubectl -n rahbar logs job/indexer --tail=40 || true
+
+  fixture-eval:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: rahbar-starter
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: helm/kind-action@v1.12.0
+        with:
+          cluster_name: rahbar
+      - name: Prepare fixture corpus and Ollama models
+        run: |
+          pip install httpx==0.28.1 pyyaml==6.0.2
+          kubectl create namespace rahbar
+          kubectl -n rahbar create configmap fixture-corpus \
+            --from-file=eval/fixtures/academic-rules-2023.md \
+            --from-file=eval/fixtures/academic-rules-2026.md \
+            --from-file=eval/fixtures/fees-2026.md
+          kubectl -n rahbar create deployment ollama --image=ollama/ollama:0.9.6
+          kubectl -n rahbar expose deployment ollama --port=11434
+          kubectl -n rahbar rollout status deployment/ollama --timeout=5m
+          kubectl -n rahbar exec deployment/ollama -- ollama pull nomic-embed-text
+          kubectl -n rahbar exec deployment/ollama -- ollama pull llama3.2:3b
+      - name: Build and load images
+        run: |
+          for component in api indexer ui; do
+            docker build -t "rahbar-$component:dev" "$component"
+            kind load docker-image "rahbar-$component:dev" --name rahbar
+          done
+      - name: Deploy fixture overlay
+        run: |
+          kubectl apply -k k8s/overlays/eval
+          kubectl -n rahbar set env deployment/api LLM_MODEL=llama3.2:3b TEMPERATURE=0
+          kubectl -n rahbar rollout status statefulset/chroma --timeout=2m
+          kubectl -n rahbar wait --for=condition=complete job/indexer --timeout=5m
+          kubectl -n rahbar rollout status deployment/api --timeout=3m
+      - name: Evaluate live grounded API
+        run: |
+          kubectl -n rahbar port-forward service/api 8000:8000 &
+          forward_pid=$!
+          trap 'kill "$forward_pid"' EXIT
+          curl --fail --silent --show-error --retry 10 --retry-connrefused \
+            http://127.0.0.1:8000/readyz
+          python eval/run_eval.py --api http://127.0.0.1:8000 \
+            --golden eval/fixtures/golden.fixture.yaml \
+            --baseline eval/fixtures/baseline.json --out eval/fixture-results.json \
+            --min-recall5 0.8
+      - name: Save fixture metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fixture-eval-results
+          path: rahbar-starter/eval/fixture-results.json
+          if-no-files-found: ignore
+      - name: Cluster diagnostics
+        if: failure()
+        run: |
+          kubectl -n rahbar get pods,deploy,jobs,svc
+          kubectl -n rahbar logs pod/chroma-0 --previous --tail=40 || true
+          kubectl -n rahbar logs job/indexer --tail=80 || true
+          kubectl -n rahbar logs deployment/api --tail=60 || true
+          kubectl -n rahbar logs deployment/ollama --tail=60 || true
