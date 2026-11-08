@@ -1,0 +1,71 @@
+{
+  "by_type": {
+    "exact": {
+      "recall@3": 1.0,
+      "recall@5": 1.0
+    },
+    "injection": {
+      "recall@3": 1.0,
+      "recall@5": 1.0
+    },
+    "ordinary": {
+      "recall@3": 1.0,
+      "recall@5": 1.0
+    },
+    "version": {
+      "recall@3": 1.0,
+      "recall@5": 1.0
+    }
+  },
+  "recall@3": 1.0,
+  "recall@5": 1.0,
+  "citation_count": 5,
+  "citation_validity": 1.0,
+  "abstention_correctness": 1.0,
+  "golden": "eval/fixtures/golden.fixture.yaml",
+  "questions": 6,
+  "per_question": [
+    {
+      "id": "f01",
+      "answered_from_context": true,
+      "citation_count": 1,
+      "citation_validity": 1.0,
+      "recall@5": 1.0
+    },
+    {
+      "id": "f02",
+      "answered_from_context": true,
+      "citation_count": 1,
+      "citation_validity": 1.0,
+      "recall@5": 1.0
+    },
+    {
+      "id": "f03",
+      "answered_from_context": true,
+      "citation_count": 1,
+      "citation_validity": 1.0,
+      "recall@5": 1.0
+    },
+    {
+      "id": "f04",
+      "answered_from_context": true,
+      "citation_count": 1,
+      "citation_validity": 1.0,
+      "recall@5": 1.0
+    },
+    {
+      "id": "f05",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": null
+    },
+    {
+      "id": "f06",
+      "answered_from_context": true,
+      "citation_count": 1,
+      "citation_validity": 1.0,
+      "recall@5": 1.0
+    }
+  ]
+}
