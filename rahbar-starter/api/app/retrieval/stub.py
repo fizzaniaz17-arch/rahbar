@@ -197,7 +197,8 @@ _UNIVERSITY_TOPIC = re.compile(
     r"faculty|professor|campus|staff|teacher|department|dean|rector|"
     r"handbook|rules|regulation|policy|clause|section|prospectus|"
     r"exam|test|quiz|assignment|project|thesis|report|result|transcript|"
-    r"hostel|transport|canteen|library|lab",
+    r"hostel|transport|canteen|library|lab|"
+    r"stub|document|rahbar|system|assistant|what.+say",
     re.IGNORECASE,
 )
 

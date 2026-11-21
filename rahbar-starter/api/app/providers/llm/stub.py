@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import re
 import textwrap
+from typing import Literal
 
 from ...schemas import Answer, Citation, Passage
 
@@ -159,7 +160,9 @@ class StubProvider:
             for p in passages[:3]
         ]
         top_score = passages[0].score
-        confidence = "high" if top_score >= 0.85 else "medium" if top_score >= 0.65 else "low"
+        confidence: Literal["high", "medium", "low"] = (
+            "high" if top_score >= 0.85 else "medium" if top_score >= 0.65 else "low"
+        )
 
         return Answer(
             reasoning=(
