@@ -103,8 +103,24 @@ jobs:
           kubectl -n rahbar create deployment ollama --image=ollama/ollama:0.9.6
           kubectl -n rahbar expose deployment ollama --port=11434
           kubectl -n rahbar rollout status deployment/ollama --timeout=5m
-          kubectl -n rahbar exec deployment/ollama -- ollama pull nomic-embed-text
-          kubectl -n rahbar exec deployment/ollama -- ollama pull llama3.2:3b
+          pull_with_retry() {
+            local model="$1"
+            local max_retries=5
+            local delay=10
+            for ((i=1; i<=max_retries; i++)); do
+              echo "Pulling $model (attempt $i/$max_retries)..."
+              if kubectl -n rahbar exec deployment/ollama -- ollama pull "$model"; then
+                echo "Successfully pulled $model"
+                return 0
+              fi
+              echo "Failed to pull $model, retrying in ${delay}s..."
+              sleep $delay
+              delay=$((delay * 2))
+            done
+            return 1
+          }
+          pull_with_retry nomic-embed-text
+          pull_with_retry llama3.2:3b
       - name: Build and load images
         run: |
           for component in api indexer ui; do

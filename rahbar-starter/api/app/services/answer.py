@@ -19,8 +19,23 @@ log = logging.getLogger("rahbar.answer")
 
 
 def abstain() -> Answer:
-    return Answer(reasoning="", answer="I couldn't verify an answer from the available sources.",
-                  citations=[], answered_from_context=False, confidence="low")
+    return Answer(
+        reasoning="No relevant passages found in the corpus for this question.",
+        answer=(
+            "This question is outside the scope of what I can answer. "
+            "I am a FAST-NUCES university assistant and can only answer questions about:\n\n"
+            "• Academic rules (CGPA, probation, dismissal, grades)\n"
+            "• Attendance policy\n"
+            "• Course registration and prerequisites\n"
+            "• Fee structure and refund policy\n"
+            "• Generative AI and plagiarism policies\n"
+            "• Faculty statistics\n\n"
+            "Please ask a question related to FAST-NUCES university policies and documents."
+        ),
+        citations=[],
+        answered_from_context=False,
+        confidence="low",
+    )
 
 
 def grounded_answer(question: str, passages: list[Passage], provider: LLMProvider) -> Answer:
