@@ -46,6 +46,13 @@ def build_trace(
     injection_detected = bool(_INJECTION.search(question)) or any(
         _INJECTION.search(passage.text) for passage in passages
     )
+    if cache_hit:
+        generation_origin = "semantic_cache"
+    elif evidence:
+        generation_origin = "llm_provider"
+    else:
+        generation_origin = "local_abstention"
+
     return {
         "trace_id": trace_id,
         "trace_schema_version": 1,
@@ -77,9 +84,7 @@ def build_trace(
             hashlib.sha256(serialized_prompt.encode("utf-8")).hexdigest()
             if serialized_prompt is not None else None
         ),
-        "generation_origin": (
-            "semantic_cache" if cache_hit else "llm_provider" if evidence else "local_abstention"
-        ),
+        "generation_origin": generation_origin,
         "llm": {
             "provider": provider_name,
             "model": settings.llm_model,
@@ -96,8 +101,16 @@ def build_trace(
     }
 
 
-def append_trace(path: str, trace: dict[str, Any]) -> None:
-    target = Path(path)
+def _trace_file(path: str, allowed_directory: Path) -> Path:
+    allowed_root = allowed_directory.resolve()
+    target = Path(path).resolve()
+    if target.parent != allowed_root:
+        raise ValueError(f"trace path must be directly under {allowed_root}")
+    return target
+
+
+def append_trace(path: str, trace: dict[str, Any], allowed_directory: Path) -> None:
+    target = _trace_file(path, allowed_directory)
     target.parent.mkdir(parents=True, exist_ok=True)
     line = (json.dumps(trace, ensure_ascii=False, separators=(",", ":")) + "\n").encode()
     with _write_lock:
@@ -110,8 +123,8 @@ def append_trace(path: str, trace: dict[str, Any]) -> None:
             os.close(descriptor)
 
 
-def read_traces(path: str) -> list[dict[str, Any]]:
-    source = Path(path)
+def read_traces(path: str, allowed_directory: Path) -> list[dict[str, Any]]:
+    source = _trace_file(path, allowed_directory)
     if not source.exists():
         return []
     records: list[dict[str, Any]] = []

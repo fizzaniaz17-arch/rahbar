@@ -11,14 +11,34 @@ import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import httpx
 import yaml  # type: ignore[import-untyped]
 
 HERE = Path(__file__).resolve().parent
+ALLOWED_OLLAMA_HOSTS = frozenset({
+    "localhost",
+    "127.0.0.1",
+    "::1",
+    "host.docker.internal",
+    "host.minikube.internal",
+    "ollama",
+    "ollama.rahbar.svc",
+    "ollama.rahbar.svc.cluster.local",
+})
+
+
+def resolve_eval_path(path: Path, root: Path = HERE) -> Path:
+    allowed_root = root.resolve()
+    resolved = path.expanduser().resolve()
+    if resolved == allowed_root or not resolved.is_relative_to(allowed_root):
+        raise ValueError(f"path must be inside {allowed_root}")
+    return resolved
 
 
 def read_jsonl(path: Path) -> list[dict]:
+    path = resolve_eval_path(path)
     records = []
     with path.open(encoding="utf-8") as stream:
         for line_number, line in enumerate(stream, 1):
@@ -33,6 +53,7 @@ def read_jsonl(path: Path) -> list[dict]:
 
 
 def load_answerable_golden(path: Path) -> list[dict]:
+    path = resolve_eval_path(path)
     data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     questions = [
         question for question in data.get("questions", [])
@@ -113,13 +134,36 @@ def evaluate_coverage(
     }
 
 
+def validate_ollama_url(url: str) -> str:
+    parsed = urlsplit(url)
+    hostname = (parsed.hostname or "").casefold()
+    try:
+        port = parsed.port
+    except ValueError as exc:
+        raise ValueError("invalid Ollama URL port") from exc
+    if (
+        parsed.scheme != "http"
+        or hostname not in ALLOWED_OLLAMA_HOSTS
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.path not in ("", "/")
+        or parsed.query
+        or parsed.fragment
+        or port not in (None, 11434)
+    ):
+        raise ValueError("Ollama URL must use an approved host and port 11434")
+    formatted_host = f"[{hostname}]" if ":" in hostname else hostname
+    return f"http://{formatted_host}:11434"
+
+
 def embed(texts: list[str], model: str, url: str) -> list[list[float]]:
     vectors = []
+    base_url = validate_ollama_url(url)
     with httpx.Client(timeout=120) as client:
         for start in range(0, len(texts), 32):
             batch = texts[start:start + 32]
             response = client.post(
-                f"{url.rstrip('/')}/api/embed",
+                f"{base_url}/api/embed",
                 json={"model": model, "input": batch},
             )
             response.raise_for_status()
@@ -148,12 +192,22 @@ def main() -> int:
     if not 0 <= args.threshold <= 1:
         parser.error("--threshold must be between 0 and 1")
 
-    live = read_jsonl(args.live)
-    golden = load_answerable_golden(args.golden)
+    try:
+        live_path = resolve_eval_path(args.live)
+        golden_path = resolve_eval_path(args.golden)
+        output_path = resolve_eval_path(args.out or HERE / "results" / (
+            "coverage_" + datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S") + ".json"
+        ))
+        ollama_url = validate_ollama_url(args.ollama_url)
+    except ValueError as exc:
+        parser.error(str(exc))
+
+    live = read_jsonl(live_path)
+    golden = load_answerable_golden(golden_path)
     vectors = embed(
         [item["query"] for item in live] + [item["question"] for item in golden],
         args.model,
-        args.ollama_url,
+        ollama_url,
     )
     live_vectors = vectors[:len(live)]
     golden_vectors = vectors[len(live):]
@@ -163,16 +217,13 @@ def main() -> int:
     result.update({
         "timestamp_utc": datetime.now(timezone.utc).isoformat(),
         "embedding_model": args.model,
-        "golden_sha256": hashlib.sha256(args.golden.read_bytes()).hexdigest(),
-        "live_sha256": hashlib.sha256(args.live.read_bytes()).hexdigest(),
+        "golden_sha256": hashlib.sha256(golden_path.read_bytes()).hexdigest(),
+        "live_sha256": hashlib.sha256(live_path.read_bytes()).hexdigest(),
         "minimum_coverage": args.minimum_coverage,
         "gate": "PASS" if result["coverage"] >= args.minimum_coverage else "FAIL",
     })
-    output = args.out or HERE / "results" / (
-        "coverage_" + datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S") + ".json"
-    )
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(result, indent=2), encoding="utf-8")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(json.dumps(result, indent=2), encoding="utf-8")
     print(json.dumps({key: value for key, value in result.items() if key != "queries"}, indent=2))
     return 0 if result["coverage"] >= args.minimum_coverage else 1
 

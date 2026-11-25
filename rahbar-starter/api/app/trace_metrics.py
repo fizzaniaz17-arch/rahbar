@@ -6,6 +6,7 @@ import argparse
 import json
 import math
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 from .config import get_settings
 from .services.tracing import read_traces
@@ -64,11 +65,18 @@ def summarize(traces: list[dict], hours: float) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--hours", type=float, default=24)
-    parser.add_argument("--path", default=get_settings().trace_path)
+    settings = get_settings()
+    parser.add_argument("--path", default=settings.trace_path)
     args = parser.parse_args()
     if args.hours <= 0:
         parser.error("--hours must be greater than zero")
-    print(json.dumps(summarize(read_traces(args.path), args.hours), indent=2))
+    try:
+        traces = read_traces(
+            args.path, allowed_directory=Path(settings.trace_path).parent
+        )
+    except ValueError as exc:
+        parser.error(str(exc))
+    print(json.dumps(summarize(traces, args.hours), indent=2))
     return 0
 
 

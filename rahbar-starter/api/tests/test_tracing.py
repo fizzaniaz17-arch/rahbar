@@ -64,9 +64,9 @@ def test_cache_hit_trace_does_not_claim_a_prompt_was_sent() -> None:
 
 def test_jsonl_trace_append_and_window_metrics(tmp_path) -> None:
     path = tmp_path / "traces.jsonl"
-    append_trace(str(path), make_trace())
+    append_trace(str(path), make_trace(), allowed_directory=tmp_path)
 
-    traces = read_traces(str(path))
+    traces = read_traces(str(path), allowed_directory=tmp_path)
     summary = summarize(traces, hours=24)
 
     assert len(traces) == 1
@@ -81,4 +81,13 @@ def test_trace_reader_reports_invalid_json_line(tmp_path) -> None:
     path.write_text("{bad json}\n", encoding="utf-8")
 
     with pytest.raises(ValueError, match="line 1"):
-        read_traces(str(path))
+        read_traces(str(path), allowed_directory=tmp_path)
+
+
+def test_trace_file_must_be_directly_inside_allowed_directory(tmp_path) -> None:
+    outside = tmp_path.parent / f"{tmp_path.name}-outside.jsonl"
+
+    with pytest.raises(ValueError, match="directly under"):
+        append_trace(str(outside), make_trace(), allowed_directory=tmp_path)
+    with pytest.raises(ValueError, match="directly under"):
+        read_traces(str(outside), allowed_directory=tmp_path)
