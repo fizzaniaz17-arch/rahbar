@@ -8,6 +8,7 @@ from eval.run_eval import (
     load_gate_thresholds,
     ndcg_at_k,
     percentile,
+    resolve_cli_path,
     reciprocal_rank,
 )
 
@@ -57,4 +58,14 @@ def test_gate_config_rejects_out_of_range_threshold(tmp_path: Path) -> None:
     config.write_text("min_citation_validity: 1.2\n", encoding="utf-8")
 
     with pytest.raises(ValueError, match="min_citation_validity"):
-        load_gate_thresholds(config)
+        load_gate_thresholds(config, allowed_roots=(tmp_path,))
+
+
+def test_cli_paths_must_remain_under_an_approved_root(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    inside = project / "results.json"
+
+    assert resolve_cli_path(inside, (project,)) == inside
+    with pytest.raises(ValueError, match="approved directory"):
+        resolve_cli_path(tmp_path / "outside.json", (project,))
