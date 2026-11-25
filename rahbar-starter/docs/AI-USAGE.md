@@ -1,7 +1,5 @@
 # AI usage
 
-<!-- STARTER-TODO: list every AI tool you used. A specific disclosure carries no penalty. -->
-
 | Tool | What it wrote or shaped | What we changed afterwards, and why |
 | --- | --- | --- |
 
@@ -20,3 +18,8 @@ Markdown section detection for the fixture corpus.
 
 ChatGPT Codex prepared the CI fixture evaluation workflow and overlay. The
 fixture uses the starter documents and a smaller Ollama generation model.
+
+Copilot SDK in VS Code reviewed the cloned repository, added incremental
+embedding reuse with focused tests, and made retrieval failures explicit as
+HTTP 503 responses. The changes were checked with the local API and indexer
+test suites; real-model and Kubernetes verification remains outstanding.

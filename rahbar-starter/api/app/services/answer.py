@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 
 import httpx
+from fastapi import HTTPException
 
 from ..config import Settings
 from ..logjson import request_id_var
@@ -13,7 +14,7 @@ from ..retrieval.base import Retriever
 from ..retrieval.chroma import ChromaRetriever
 from ..schemas import Answer, AskResponse, Passage, RetrievedRef
 
-from .cache import SemanticCache, cache_key
+from .cache import SemanticCache, cache_key, never_cache
 
 log = logging.getLogger("rahbar.answer")
 
@@ -51,9 +52,11 @@ def grounded_answer(question: str, passages: list[Passage], provider: LLMProvide
                 (c.source, c.section, c.page) in allowed for c in answer.citations
             ):
                 return answer
-            log.warning("provider returned an ungrounded answer", extra={"attempt": attempt + 1})
+            log.warning("provider returned an ungrounded answer; retrying",
+                        extra={"attempt": attempt + 1})
         except (ValueError, KeyError, TypeError, httpx.HTTPError) as exc:
-            log.warning("provider output failed: %s", type(exc).__name__)
+            log.warning("provider validation failed; retrying: %s", type(exc).__name__)
+    log.warning("provider validation fallback: abstaining")
     return abstain()
 
 
@@ -66,9 +69,9 @@ def answer_question(
             passages, vector = retriever.retrieve_with_vector(question, settings.top_k)
         else:
             passages = retriever.retrieve(question, k=settings.top_k)
-    except Exception as exc:
+    except (httpx.HTTPError, RuntimeError, ValueError) as exc:
         log.warning("retrieval failed: %s", type(exc).__name__)
-        passages = []
+        raise HTTPException(status_code=503, detail="retrieval service unavailable") from exc
     evidence = [passage for passage in passages if passage.score >= settings.relevance_floor]
     answer = None
     cached = False
@@ -80,7 +83,7 @@ def answer_question(
             cached = answer is not None
             if answer is None:
                 answer = grounded_answer(question, evidence, provider)
-                if answer.answered_from_context:
+                if not never_cache(answer):
                     cache.put(key, vector, answer)
         finally:
             cache.redis.close()

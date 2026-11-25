@@ -1,7 +1,7 @@
 name: RAHBAR CI
 on:
   push:
-    branches: [dev]
+    branches: [dev, 'feature/**']
   pull_request:
     branches: [main]
 permissions:
@@ -24,9 +24,36 @@ jobs:
       - run: cd indexer && mypy pipeline
       - run: cd api && pytest --cov=app --cov-fail-under=60
       - run: cd indexer && pytest
+      - run: python -m pytest -q eval/test_run_eval.py
+
+  validate-manifests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Kubernetes manifests
+        uses: docker://ghcr.io/yannh/kubeconform:v0.6.7
+        with:
+          args: -strict -summary -recursive rahbar-starter/k8s
+
+  dependency-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan dependencies and configuration
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: rahbar-starter
+          scanners: vuln,misconfig
+          severity: HIGH,CRITICAL
+          exit-code: '1'
 
   cluster-smoke:
-    needs: test
+    needs: [test, validate-manifests]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -73,7 +100,7 @@ jobs:
           kubectl -n rahbar logs job/indexer --tail=40 || true
 
   fixture-eval:
-    needs: test
+    needs: [test, validate-manifests]
     runs-on: ubuntu-latest
     timeout-minutes: 25
     defaults:

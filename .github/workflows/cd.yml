@@ -28,6 +28,7 @@ jobs:
     env:
       DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      IMAGE_TAG: ${{ github.sha }}
     steps:
       - uses: actions/checkout@v4
       - name: Publish SHA-tagged images
@@ -39,7 +40,7 @@ jobs:
           }
           printf '%s' "$DOCKERHUB_TOKEN" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
           for component in api indexer ui; do
-            image="$DOCKERHUB_USERNAME/rahbar-$component:$GITHUB_SHA"
+            image="$DOCKERHUB_USERNAME/rahbar-$component:$IMAGE_TAG"
             docker build -t "$image" "$component"
             docker push "$image"
           done
@@ -49,6 +50,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
+      IMAGE_TAG: ${{ github.sha }}
     defaults:
       run:
         working-directory: rahbar-starter
@@ -69,13 +71,13 @@ jobs:
           images:
           - name: rahbar-api
             newName: ${DOCKERHUB_USERNAME}/rahbar-api
-            newTag: ${GITHUB_SHA}
+            newTag: ${IMAGE_TAG}
           - name: rahbar-indexer
             newName: ${DOCKERHUB_USERNAME}/rahbar-indexer
-            newTag: ${GITHUB_SHA}
+            newTag: ${IMAGE_TAG}
           - name: rahbar-ui
             newName: ${DOCKERHUB_USERNAME}/rahbar-ui
-            newTag: ${GITHUB_SHA}
+            newTag: ${IMAGE_TAG}
           YAML
           kubectl apply -k .
           kubectl -n rahbar rollout status statefulset/chroma --timeout=2m

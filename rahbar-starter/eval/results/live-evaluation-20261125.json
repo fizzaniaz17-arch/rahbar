@@ -1,0 +1,143 @@
+{
+  "by_type": {
+    "exact": {
+      "recall@3": 0.0,
+      "recall@5": 0.0
+    },
+    "injection": {
+      "recall@3": 0.0,
+      "recall@5": 0.0
+    },
+    "ordinary": {
+      "recall@3": 0.0,
+      "recall@5": 0.0
+    },
+    "version": {
+      "recall@3": 0.0,
+      "recall@5": 0.0
+    }
+  },
+  "recall@3": 0.0,
+  "recall@5": 0.0,
+  "citation_count": 0,
+  "citation_validity": null,
+  "abstention_correctness": 1.0,
+  "mrr@5": 0.0,
+  "ndcg@5": 0.0,
+  "golden": "eval\\golden.yaml",
+  "golden_sha256": "3a08d7339ede48d3c7d31c236fff665632e7e9925648ffdbda929e93697f29eb",
+  "timestamp_utc": "2026-11-25T14:45:52.884342+00:00",
+  "gate_thresholds": {
+    "max_recall5_drop": 0.05,
+    "min_citation_validity": 0.95,
+    "required_abstention_correctness": 1.0
+  },
+  "questions": 15,
+  "per_question": [
+    {
+      "id": "q01",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": 0.0
+    },
+    {
+      "id": "q02",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": 0.0
+    },
+    {
+      "id": "q03",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": 0.0
+    },
+    {
+      "id": "q04",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": 0.0
+    },
+    {
+      "id": "q05",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": 0.0
+    },
+    {
+      "id": "q06",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": 0.0
+    },
+    {
+      "id": "q07",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": 0.0
+    },
+    {
+      "id": "q08",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": 0.0
+    },
+    {
+      "id": "q09",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": 0.0
+    },
+    {
+      "id": "q10",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": 0.0
+    },
+    {
+      "id": "q11",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": 0.0
+    },
+    {
+      "id": "q12",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": 0.0
+    },
+    {
+      "id": "q13",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": null
+    },
+    {
+      "id": "q14",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": null
+    },
+    {
+      "id": "q15",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": 0.0
+    }
+  ]
+}

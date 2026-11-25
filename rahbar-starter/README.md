@@ -1,9 +1,69 @@
 # RAHBAR
 
-<!-- STARTER-TODO(10): replace this file before you submit. It must contain: a one-paragraph
-     problem statement, a CI badge, an architecture diagram, the exact apply order, the path from
-     a clean clone to an answered question, a table of the API's endpoints, and a screenshot.
-     STARTER.md explains the starter kit; this file explains YOUR system. -->
+[![CI](https://github.com/fizzaniaz17-arch/rahbar/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/fizzaniaz17-arch/rahbar/actions/workflows/ci.yml)
+
+RAHBAR is a university-policy question-answering service that retrieves source passages from a
+versioned document corpus and returns grounded answers with citations. Its API reads a Chroma
+index, while a dedicated Kubernetes indexer Job owns writes; CI and the existing evaluation
+runner check the API and retrieval behavior. The current dev overlay uses stubs, while real
+model evaluation and the production rollout require local Ollama and Minikube.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    C[Document corpus] --> J[Indexing Job]
+    J --> X[Extract, clean, chunk]
+    X --> E[Ollama embeddings]
+    E --> V[(Persistent Chroma)]
+    Q[Question] --> A[FastAPI]
+    A --> V
+    V --> R[Retrieved evidence]
+    R --> L[LLM provider]
+    L --> O[Answer and citations]
+    T[Evaluation runner] --> A
+```
+
+## From a clean clone to an answered question
+
+Run these commands from `rahbar-starter/` in WSL 2 or another environment with
+`make`, Docker, Minikube and `kubectl` installed:
+
+```sh
+git clone https://github.com/fizzaniaz17-arch/rahbar.git
+cd rahbar/rahbar-starter
+make install
+make test
+make cluster
+make images
+make apply
+kubectl -n rahbar wait --for=condition=complete job/indexer --timeout=10m
+kubectl -n rahbar rollout status deployment/api --timeout=3m
+kubectl -n rahbar rollout status deployment/ui --timeout=3m
+make ask Q="What does the starter return?"
+```
+
+The exact development apply order is: start Minikube and its addons with `make cluster`,
+build and load the images with `make images`, apply `k8s/overlays/dev` with `make apply`,
+wait for the indexer Job, then wait for the API and UI rollouts before asking a question.
+The equivalent direct apply command is `kubectl apply -k k8s/overlays/dev`.
+The dev overlay intentionally uses a dummy index and stub answers.
+
+## API endpoints
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/healthz` | Liveness only; does not contact dependencies. |
+| GET | `/readyz` | Dependency and embedding-pin readiness. |
+| GET | `/metrics` | Prometheus request and latency metrics. |
+| POST | `/api/ask` | Grounded answer with citations and retrieved passages. |
+
+### Existing development evidence
+
+The image below is an existing CI development-smoke capture committed with the repository; it
+is not evidence of a Minikube deployment run in this workspace.
+
+![Existing CI development smoke evidence](docs/evidence/ci-development-smoke-pass.png)
 
 ## Kubernetes development smoke test
 

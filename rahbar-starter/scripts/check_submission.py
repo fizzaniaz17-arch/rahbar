@@ -24,7 +24,15 @@ import sys
 import tokenize
 from pathlib import Path
 
-ROOT = Path.cwd()
+ROOT = Path(__file__).resolve().parents[1]
+try:
+    _git_root = subprocess.run(
+        ["git", "rev-parse", "--show-toplevel"], cwd=ROOT,
+        capture_output=True, text=True, timeout=10,
+    )
+    REPO_ROOT = Path(_git_root.stdout.strip()) if _git_root.returncode == 0 else ROOT
+except (OSError, subprocess.SubprocessError):
+    REPO_ROOT = ROOT
 
 if sys.stdout.isatty() and os.name != "nt":
     RED, YELLOW, GREEN, GREY, BOLD, OFF = (
@@ -255,14 +263,14 @@ def check_structure():
             f"{n} evidence files - need branch protection, blocked merge, kubectl top, "
             f"get endpoints, get hpa")
 
-    wf = ROOT / ".github" / "workflows"
+    wf = REPO_ROOT / ".github" / "workflows"
     n = len(list(wf.glob("*.yml")) + list(wf.glob("*.yaml"))) if wf.is_dir() else 0
     verdict(n >= 2, s, f"{n} workflow files", f"{n} workflows - ci.yml and cd.yml required")
 
 
 def check_git():
     s = "A · git"
-    if not (ROOT / ".git").is_dir():
+    if not (REPO_ROOT / ".git").exists():
         warn(s, "not a git repository - skipping history checks")
         return
 
@@ -826,10 +834,14 @@ def check_dockerfiles():
 
 def check_workflows():
     s = "I · CI/CD"
-    if not (ROOT / ".github" / "workflows").is_dir():
+    wf = REPO_ROOT / ".github" / "workflows"
+    if not wf.is_dir():
         fail(s, "no .github/workflows/")
         return
-    blob = slurp([".github/workflows/*.yml", ".github/workflows/*.yaml"])
+    workflow_files = sorted(list(wf.glob("*.yml")) + list(wf.glob("*.yaml")))
+    blob = "\n".join(
+        path.read_text(encoding="utf-8", errors="replace") for path in workflow_files
+    )
 
     for pat, good, bad in [
         (r"\bpytest\b", "pytest runs in CI", "no pytest step"),
@@ -861,8 +873,7 @@ def check_workflows():
 
     # the publishing job specifically must be gated
     gated = True
-    for wfile in sorted(list((ROOT / ".github" / "workflows").glob("*.yml")) +
-                        list((ROOT / ".github" / "workflows").glob("*.yaml"))):
+    for wfile in workflow_files:
         text = wfile.read_text(encoding="utf-8", errors="replace")
         for jb in re.split(r"^  (?=[A-Za-z][\w-]*:\s*$)", text, flags=re.M):
             publishes = re.search(r"(build-push-action|docker\s+push|push:\s*true)", jb)

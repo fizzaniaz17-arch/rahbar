@@ -16,6 +16,10 @@ MAX_ENTRIES = 8
 TTL_SECONDS = 900
 
 
+def never_cache(answer: Answer) -> bool:
+    return not answer.answered_from_context or not answer.citations
+
+
 def cache_key(settings: Settings, passages: list[Passage]) -> str:
     scope = [settings.collection, settings.embed_model, settings.llm_provider,
              settings.llm_model, settings.ollama_url, settings.hosted_base_url,

@@ -7,16 +7,20 @@
 
 Exit code 0 when every gate passes, 1 when any fails. CI relies on that exit code.
 
-Given: talking to the API, reading the golden set, writing results.json, the exit
-code. Yours: the four functions marked STARTER-TODO. They are the evaluation.
+The runner talks to the API, reads a golden set, writes machine-readable results,
+and returns a non-zero exit code when the configured release gate fails.
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import math
 import sys
 import time
+from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 
 import httpx
@@ -24,10 +28,24 @@ import yaml
 
 HERE = Path(__file__).resolve().parent
 
-# The gate from section 5.4. Change these only with a reason written in docs/PIPELINE.md.
-MAX_RECALL5_DROP = 0.05        # recall@5 may fall at most 5 points below the baseline
-MIN_CITATION_VALIDITY = 0.95   # at least 95% of citations must match retrieved passages
-REQUIRED_ABSTENTION = 1.0      # every must-abstain question must be declined
+
+@dataclass(frozen=True)
+class GateThresholds:
+    max_recall5_drop: float = 0.05
+    min_citation_validity: float = 0.95
+    required_abstention_correctness: float = 1.0
+
+
+def load_gate_thresholds(path: Path) -> GateThresholds:
+    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    thresholds = GateThresholds(**data)
+    if not 0 <= thresholds.max_recall5_drop <= 1:
+        raise ValueError("max_recall5_drop must be between 0 and 1")
+    if not 0 <= thresholds.min_citation_validity <= 1:
+        raise ValueError("min_citation_validity must be between 0 and 1")
+    if not 0 <= thresholds.required_abstention_correctness <= 1:
+        raise ValueError("required_abstention_correctness must be between 0 and 1")
+    return thresholds
 
 
 def load_golden(path: Path) -> list[dict]:
@@ -66,6 +84,51 @@ def citation_validity(response: dict) -> float | None:
                for item in citations) / len(citations)
 
 
+def percentile(values: list[float], percentile_value: float) -> float | None:
+    if not values:
+        return None
+    if not 0 <= percentile_value <= 100:
+        raise ValueError("percentile must be between 0 and 100")
+    ordered = sorted(values)
+    position = (len(ordered) - 1) * percentile_value / 100
+    lower = math.floor(position)
+    upper = math.ceil(position)
+    weight = position - lower
+    return ordered[lower] * (1 - weight) + ordered[upper] * weight
+
+
+def reciprocal_rank(relevant: list[dict], retrieved: list[dict], k: int) -> float | None:
+    """Return reciprocal rank of the first matching source/section pair."""
+    expected = {(item["source"], " ".join(item["section"].split()).casefold())
+                for item in relevant}
+    if not expected:
+        return None
+    for rank, item in enumerate(retrieved[:k], 1):
+        pair = (item["source"], " ".join(item["section"].split()).casefold())
+        if pair in expected:
+            return 1 / rank
+    return 0.0
+
+
+def ndcg_at_k(relevant: list[dict], retrieved: list[dict], k: int) -> float | None:
+    """Compute binary-relevance normalized discounted cumulative gain."""
+    expected = {(item["source"], " ".join(item["section"].split()).casefold())
+                for item in relevant}
+    if not expected:
+        return None
+    seen: set[tuple[str, str]] = set()
+    actual = []
+    for item in retrieved[:k]:
+        pair = (item["source"], " ".join(item["section"].split()).casefold())
+        actual.append(pair in expected and pair not in seen)
+        seen.add(pair)
+    dcg = sum(int(is_relevant) / math.log2(rank + 1)
+              for rank, is_relevant in enumerate(actual, 1))
+    ideal_count = min(len(expected), k)
+    ideal_dcg = sum(1 / math.log2(rank + 1) for rank in range(1, ideal_count + 1))
+    return dcg / ideal_dcg if ideal_dcg else 0.0
+
+
 def summarise(rows: list[dict]) -> dict:
     def mean(values: list[float]) -> float | None:
         return sum(values) / len(values) if values else None
@@ -94,22 +157,45 @@ def summarise(rows: list[dict]) -> dict:
     results["citation_count"] = citation_total
     results["citation_validity"] = valid_total / citation_total if citation_total else None
     results["abstention_correctness"] = mean(abstentions)
+    scored_mrr = [reciprocal_rank(row["relevant"], row["response"]["retrieved"], 5)
+                  for row in rows]
+    scored_ndcg = [ndcg_at_k(row["relevant"], row["response"]["retrieved"], 5)
+                   for row in rows]
+    results["mrr@5"] = mean([value for value in scored_mrr if value is not None])
+    results["ndcg@5"] = mean([value for value in scored_ndcg if value is not None])
+    latencies = [float(row["seconds"]) for row in rows if "seconds" in row]
+    results["latency_p50_seconds"] = percentile(latencies, 50)
+    results["latency_p95_seconds"] = percentile(latencies, 95)
     return results
 
 
-def gate(results: dict, baseline: dict | None) -> list[str]:
+def gate(
+    results: dict,
+    baseline: dict | None,
+    thresholds: GateThresholds = GateThresholds(),
+) -> list[str]:
     failures = []
     recall = results["recall@5"]
     previous = baseline.get("recall@5") if baseline else None
-    if recall is None or (previous is not None and previous - recall > MAX_RECALL5_DROP + 1e-12):
-        failures.append("recall@5 missing or more than five percentage points below baseline")
+    if recall is None or (
+        previous is not None
+        and previous - recall > thresholds.max_recall5_drop + 1e-12
+    ):
+        failures.append(
+            "recall@5 missing or more than "
+            f"{thresholds.max_recall5_drop:.1%} below baseline"
+        )
     validity = results["citation_validity"]
     if validity is None:
         failures.append("the API returned zero citations across the evaluation set")
-    elif validity < MIN_CITATION_VALIDITY:
-        failures.append("citation validity must be at least 95%")
-    if results["abstention_correctness"] != REQUIRED_ABSTENTION:
-        failures.append("every must-abstain question must be declined")
+    elif validity < thresholds.min_citation_validity:
+        failures.append(
+            f"citation validity must be at least {thresholds.min_citation_validity:.1%}"
+        )
+    abstention = results["abstention_correctness"]
+    if (abstention is None
+            or abstention < thresholds.required_abstention_correctness):
+        failures.append("abstention correctness is below the configured minimum")
     return failures
 
 
@@ -120,6 +206,7 @@ def main() -> int:
     parser.add_argument("--golden", type=Path, default=HERE / "golden.yaml")
     parser.add_argument("--baseline", type=Path, default=HERE / "baseline.json")
     parser.add_argument("--out", type=Path, default=HERE / "results.json")
+    parser.add_argument("--gate-config", type=Path, default=HERE / "gate.yaml")
     parser.add_argument("--responses", type=Path,
                         help="optional per-question responses for manual review")
     parser.add_argument("--timeout", type=float, default=120.0,
@@ -154,12 +241,22 @@ def main() -> int:
                 args.responses.write_text(json.dumps(rows, indent=2), encoding="utf-8")
     results = summarise(rows)
     baseline = json.loads(args.baseline.read_text()) if args.baseline.exists() else None
-    failures = gate(results, baseline)
+    thresholds = load_gate_thresholds(args.gate_config)
+    failures = gate(results, baseline, thresholds)
     recall5 = results["recall@5"]
     if recall5 is not None and recall5 < args.min_recall5:
         failures.append(f"recall@5 {recall5:.3f} is below the {args.min_recall5:.3f} floor")
 
     results["golden"] = str(args.golden)
+    results["golden_sha256"] = hashlib.sha256(
+        args.golden.read_bytes()
+    ).hexdigest()
+    results["timestamp_utc"] = datetime.now(timezone.utc).isoformat()
+    results["gate_thresholds"] = {
+        "max_recall5_drop": thresholds.max_recall5_drop,
+        "min_citation_validity": thresholds.min_citation_validity,
+        "required_abstention_correctness": thresholds.required_abstention_correctness,
+    }
     results["questions"] = len(rows)
     results["per_question"] = [
         {"id": row["id"], "answered_from_context": row["response"]["answered_from_context"],
