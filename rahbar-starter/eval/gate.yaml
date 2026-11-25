@@ -1,0 +1,3 @@
+max_recall5_drop: 0.05
+min_citation_validity: 0.95
+required_abstention_correctness: 1.0

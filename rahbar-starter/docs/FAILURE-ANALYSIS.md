@@ -1,13 +1,19 @@
 # Failure analysis
 
-<!-- STARTER-TODO(5.5): break four of the six stages on purpose, one at a time, restore each,
-     and fill in one block per stage. Delete this comment when done. -->
+## Remaining failure experiments
 
-## Stage ? · name
-- **What we broke:**
-- **Symptom:**
-- **Diagnosis, as if we had not caused it:** which metric, log line or command shows it
-- **Remedy:**
+Four deliberate stage-break experiments have not been run in the current
+workspace. The CI incident below is an existing, recorded failure; it is not
+counted as four experiments. Do not treat this section as completed evidence.
+Run and document extraction, chunking, retrieval, prompt-construction, and
+generation failure cases on the target Minikube cluster before submission.
+These are outstanding test areas, not observed failures or measured results.
+
+For each experiment, record the injected fault, user-visible symptom, the
+relevant log or metric, recovery action, and a post-recovery test. In particular,
+verify that extraction failures are quarantined, chunking errors do not write
+partial data, retrieval errors remain visible to callers, and generation
+validation falls back to abstention rather than returning an ungrounded answer.
 
 ## Observed CI failure
 

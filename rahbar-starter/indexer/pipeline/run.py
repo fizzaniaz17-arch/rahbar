@@ -68,7 +68,7 @@ def run_pipeline(settings: IndexerSettings) -> int:
     from .clean import clean
     from .embed import embed
     from .extract import extract
-    from .store import store
+    from .store import existing_records, reusable_embeddings, store
 
     documents = discover(settings.corpus_dir)
     if not documents:
@@ -80,7 +80,18 @@ def run_pipeline(settings: IndexerSettings) -> int:
         pieces = chunk(doc, settings.chunk_size, settings.chunk_overlap)
         log("chunked", source=path.name, chunks=len(pieces))
         all_chunks.extend(pieces)
-    vectors = embed([c.text for c in all_chunks], settings)
+
+    existing = existing_records(settings)
+    reusable, pending = reusable_embeddings(all_chunks, existing)
+    log("embedding chunks", total=len(all_chunks), new_or_changed=len(pending),
+        reused=len(reusable))
+    vectors_by_id = dict(reusable)
+    if pending:
+        new_vectors = embed([item.text for item in pending], settings)
+        vectors_by_id.update(
+            (item.id, vector) for item, vector in zip(pending, new_vectors, strict=True)
+        )
+    vectors = [vectors_by_id[item.id] for item in all_chunks]
     return store(all_chunks, vectors, settings)
 
 

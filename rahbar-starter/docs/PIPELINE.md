@@ -97,6 +97,13 @@ Reindexing upserts new chunks before deleting stale IDs. Readers can see mixed
 old and new chunks during an update. A model or vector dimension change
 requires a separate collection and an explicit configuration switch.
 
+For incremental indexing, the Job reads existing chunk IDs, text, metadata and
+vectors from the configured Chroma collection. Exact chunk matches reuse their
+stored vectors; only new or changed chunks are sent to the embedding service.
+Removed chunk IDs are deleted after all current chunks have been upserted. This
+avoids embedding unchanged chunks, but the upsert/delete sequence is not an
+atomic transaction and a failed Job can temporarily expose a mixed index.
+
 The API compares the query vector with up to eight recent answers for the same
 model and evidence set in Redis. Cache keys include evidence text and citation
 metadata so a changed source creates a different key. Entries expire after

@@ -18,6 +18,17 @@ LATENCY = Histogram(
     ["path"],
     buckets=(0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10, 30, 60),
 )
+STAGE_LATENCY = Histogram(
+    "rahbar_stage_seconds",
+    "Query processing duration by stage",
+    ["stage"],
+    buckets=(0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10, 30),
+)
+CACHE_RESULTS = Counter("rahbar_cache_results_total", "Answer cache outcomes", ["result"])
+ABSTENTIONS = Counter("rahbar_abstentions_total", "Answers declined for insufficient evidence")
+INJECTION_ATTEMPTS = Counter(
+    "rahbar_injection_attempts_total", "Detected prompt injection attempts"
+)
 
 
 @router.get("/metrics")

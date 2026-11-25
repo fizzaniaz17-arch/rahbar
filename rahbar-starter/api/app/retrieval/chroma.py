@@ -47,7 +47,8 @@ class ChromaRetriever:
             raise ValueError("Chroma query omitted required evidence fields")
         passages = [
             Passage.model_validate(dict(chunk_id=chunk_id, text=doc, source=meta["source"],
-                    section=meta["section"], page=meta["page"], score=1 - distance))
+                    section=meta["section"], page=meta["page"], score=1 - distance,
+                    doc_version=meta.get("doc_version")))
             for chunk_id, doc, meta, distance in zip(
                 result["ids"][0], documents[0], metadatas[0], distances[0], strict=True)
         ]
