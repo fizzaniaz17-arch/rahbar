@@ -213,7 +213,7 @@ def gate(
     return failures
 
 
-def main() -> int:
+def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Evaluate RAHBAR against a golden set.")
     parser.add_argument("--api", required=True, help="base URL, e.g. http://192.168.49.2")
     parser.add_argument("--host", help="Host header, when your Ingress rule names a host")
@@ -241,29 +241,41 @@ def main() -> int:
             args.responses = resolve_cli_path(args.responses, output_roots)
     except ValueError as exc:
         parser.error(str(exc))
+    return args
 
-    questions = load_golden(args.golden)
+
+def collect_responses(args: argparse.Namespace, questions: list[dict]) -> list[dict]:
     rows = []
     headers = {"Host": args.host} if args.host else {}
     with httpx.Client(timeout=args.timeout, headers=headers) as client:
-        for q in questions:
+        for question in questions:
             started = time.perf_counter()
             try:
-                response = ask(client, args.api, q["question"])
+                response = ask(client, args.api, question["question"])
             except httpx.TimeoutException as exc:
-                sys.exit(f"{q['id']}: request timed out ({type(exc).__name__})")
-            rows.append({
-                "id": q["id"], "type": q.get("type", "ordinary"),
-                "must_abstain": bool(q.get("must_abstain", False)),
-                "relevant": q.get("relevant") or [],
-                "expect": q.get("expect"),
+                sys.exit(
+                    f"{question['id']}: request timed out ({type(exc).__name__})"
+                )
+            row = {
+                "id": question["id"],
+                "type": question.get("type", "ordinary"),
+                "must_abstain": bool(question.get("must_abstain", False)),
+                "relevant": question.get("relevant") or [],
+                "expect": question.get("expect"),
                 "response": response,
                 "seconds": round(time.perf_counter() - started, 2),
-            })
-            print(f"  {q['id']:<5} {rows[-1]['seconds']:>6.2f}s  {q['question'][:60]}")
-
+            }
+            rows.append(row)
+            print(
+                f"  {question['id']:<5} {row['seconds']:>6.2f}s  "
+                f"{question['question'][:60]}"
+            )
             if args.responses:
                 args.responses.write_text(json.dumps(rows, indent=2), encoding="utf-8")
+    return rows
+
+
+def finish_evaluation(args: argparse.Namespace, rows: list[dict]) -> int:
     results = summarise(rows)
     baseline = json.loads(args.baseline.read_text()) if args.baseline.exists() else None
     thresholds = load_gate_thresholds(args.gate_config)
@@ -273,9 +285,7 @@ def main() -> int:
         failures.append(f"recall@5 {recall5:.3f} is below the {args.min_recall5:.3f} floor")
 
     results["golden"] = str(args.golden)
-    results["golden_sha256"] = hashlib.sha256(
-        args.golden.read_bytes()
-    ).hexdigest()
+    results["golden_sha256"] = hashlib.sha256(args.golden.read_bytes()).hexdigest()
     results["timestamp_utc"] = datetime.now(timezone.utc).isoformat()
     results["gate_thresholds"] = {
         "max_recall5_drop": thresholds.max_recall5_drop,
@@ -284,10 +294,13 @@ def main() -> int:
     }
     results["questions"] = len(rows)
     results["per_question"] = [
-        {"id": row["id"], "answered_from_context": row["response"]["answered_from_context"],
-         "citation_count": len(row["response"].get("citations", [])),
-         "citation_validity": citation_validity(row["response"]),
-         "recall@5": recall_at_k(row["relevant"], row["response"]["retrieved"], 5)}
+        {
+            "id": row["id"],
+            "answered_from_context": row["response"]["answered_from_context"],
+            "citation_count": len(row["response"].get("citations", [])),
+            "citation_validity": citation_validity(row["response"]),
+            "recall@5": recall_at_k(row["relevant"], row["response"]["retrieved"], 5),
+        }
         for row in rows
     ]
     args.out.write_text(json.dumps(results, indent=2), encoding="utf-8")
@@ -303,6 +316,13 @@ def main() -> int:
         return 1
     print("\ngate passed")
     return 0
+
+
+def main() -> int:
+    args = parse_arguments()
+    questions = load_golden(args.golden)
+    rows = collect_responses(args, questions)
+    return finish_evaluation(args, rows)
 
 
 if __name__ == "__main__":
