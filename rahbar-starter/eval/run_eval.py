@@ -18,6 +18,7 @@ import hashlib
 import json
 import math
 import sys
+import tempfile
 import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -29,6 +30,13 @@ import yaml
 HERE = Path(__file__).resolve().parent
 
 
+def resolve_cli_path(path: Path, allowed_roots: tuple[Path, ...]) -> Path:
+    resolved = path.expanduser().resolve()
+    if not any(resolved.is_relative_to(root.resolve()) for root in allowed_roots):
+        raise ValueError("CLI path must be under an approved directory")
+    return resolved
+
+
 @dataclass(frozen=True)
 class GateThresholds:
     max_recall5_drop: float = 0.05
@@ -36,7 +44,10 @@ class GateThresholds:
     required_abstention_correctness: float = 1.0
 
 
-def load_gate_thresholds(path: Path) -> GateThresholds:
+def load_gate_thresholds(
+    path: Path, allowed_roots: tuple[Path, ...] = (HERE.parent,)
+) -> GateThresholds:
+    path = resolve_cli_path(path, allowed_roots)
     data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     thresholds = GateThresholds(**data)
     if not 0 <= thresholds.max_recall5_drop <= 1:
@@ -48,7 +59,10 @@ def load_gate_thresholds(path: Path) -> GateThresholds:
     return thresholds
 
 
-def load_golden(path: Path) -> list[dict]:
+def load_golden(
+    path: Path, allowed_roots: tuple[Path, ...] = (HERE.parent,)
+) -> list[dict]:
+    path = resolve_cli_path(path, allowed_roots)
     data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     questions = data.get("questions") or []
     if not questions:
@@ -216,6 +230,17 @@ def main() -> int:
     parser.add_argument("--update-baseline", action="store_true",
                         help="write these results as the new baseline")
     args = parser.parse_args()
+
+    try:
+        args.golden = resolve_cli_path(args.golden, (HERE.parent,))
+        args.baseline = resolve_cli_path(args.baseline, (HERE.parent,))
+        args.gate_config = resolve_cli_path(args.gate_config, (HERE.parent,))
+        output_roots = (HERE.parent, Path(tempfile.gettempdir()))
+        args.out = resolve_cli_path(args.out, output_roots)
+        if args.responses is not None:
+            args.responses = resolve_cli_path(args.responses, output_roots)
+    except ValueError as exc:
+        parser.error(str(exc))
 
     questions = load_golden(args.golden)
     rows = []
