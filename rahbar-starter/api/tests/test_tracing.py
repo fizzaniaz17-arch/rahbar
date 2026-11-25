@@ -85,9 +85,10 @@ def test_trace_reader_reports_invalid_json_line(tmp_path) -> None:
 
 
 def test_trace_file_must_be_directly_inside_allowed_directory(tmp_path) -> None:
-    outside = tmp_path.parent / f"{tmp_path.name}-outside.jsonl"
+    outside_path = str(tmp_path.parent / f"{tmp_path.name}-outside.jsonl")
+    trace = make_trace()
 
     with pytest.raises(ValueError, match="directly under"):
-        append_trace(str(outside), make_trace(), allowed_directory=tmp_path)
+        append_trace(outside_path, trace, allowed_directory=tmp_path)
     with pytest.raises(ValueError, match="directly under"):
-        read_traces(str(outside), allowed_directory=tmp_path)
+        read_traces(outside_path, allowed_directory=tmp_path)

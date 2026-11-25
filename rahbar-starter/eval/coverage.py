@@ -11,7 +11,7 @@ import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, urlunsplit
 
 import httpx
 import yaml  # type: ignore[import-untyped]
@@ -142,7 +142,7 @@ def validate_ollama_url(url: str) -> str:
     except ValueError as exc:
         raise ValueError("invalid Ollama URL port") from exc
     if (
-        parsed.scheme != "http"
+        parsed.scheme not in ("http", "https")
         or hostname not in ALLOWED_OLLAMA_HOSTS
         or parsed.username is not None
         or parsed.password is not None
@@ -153,7 +153,7 @@ def validate_ollama_url(url: str) -> str:
     ):
         raise ValueError("Ollama URL must use an approved host and port 11434")
     formatted_host = f"[{hostname}]" if ":" in hostname else hostname
-    return f"http://{formatted_host}:11434"
+    return urlunsplit((parsed.scheme, f"{formatted_host}:11434", "", "", ""))
 
 
 def embed(texts: list[str], model: str, url: str) -> list[list[float]]:

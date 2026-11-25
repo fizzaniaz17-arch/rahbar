@@ -49,16 +49,17 @@ def test_eval_paths_must_remain_under_the_eval_directory(tmp_path) -> None:
         "http://localhost:11434",
         "http://ollama:11434",
         "http://host.docker.internal",
+        "https://localhost:11434",
     ],
 )
 def test_ollama_url_accepts_approved_local_endpoints(url: str) -> None:
-    assert validate_ollama_url(url).startswith("http://")
+    scheme = url.split("://", maxsplit=1)[0]
+    assert validate_ollama_url(url).startswith(f"{scheme}://")
 
 
 @pytest.mark.parametrize(
     "url",
     [
-        "https://localhost:11434",
         "http://example.com:11434",
         "http://localhost:8080",
         "http://localhost:11434/api",
