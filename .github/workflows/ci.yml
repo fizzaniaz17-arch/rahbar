@@ -35,7 +35,12 @@ jobs:
       - name: Validate Kubernetes manifests
         uses: docker://ghcr.io/yannh/kubeconform:v0.6.7
         with:
-          args: -strict -summary -recursive rahbar-starter/k8s
+          args: -strict -summary -skip Kustomization rahbar-starter/k8s
+      - name: Render Kustomize overlays
+        run: |
+          kubectl kustomize rahbar-starter/k8s/overlays/dev > /dev/null
+          kubectl kustomize rahbar-starter/k8s/overlays/eval > /dev/null
+          kubectl kustomize rahbar-starter/k8s/overlays/prod > /dev/null
 
   dependency-scan:
     runs-on: ubuntu-latest
