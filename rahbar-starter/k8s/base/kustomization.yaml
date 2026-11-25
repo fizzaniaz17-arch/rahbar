@@ -6,6 +6,7 @@ resources:
 - accounts.yaml
 - services.yaml
 - configmap.yaml
+- traces-pvc.yaml
 - api.yaml
 - ui.yaml
 - chroma-statefulset.yaml

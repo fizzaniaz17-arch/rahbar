@@ -26,7 +26,7 @@ install: ## create .venv and install the api, indexer and tool dependencies
 test: ## run the api and indexer tests (stubs only: no cluster, no model, no network)
 	cd api && $(BIN)/pytest -q
 	cd indexer && $(BIN)/pytest -q
-	$(BIN)/pytest -q eval/test_run_eval.py
+	$(BIN)/pytest -q eval
 
 lint: ## ruff and mypy over everything in Python
 	$(BIN)/ruff check api indexer eval corpus
