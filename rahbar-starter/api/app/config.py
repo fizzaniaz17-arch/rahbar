@@ -8,7 +8,11 @@ Add your own keys (relevance floor, cache settings, ...) the same way.
 from __future__ import annotations
 
 import os
+import tempfile
 from dataclasses import dataclass, field
+
+_TRACE_DIRECTORY = tempfile.TemporaryDirectory(prefix="rahbar-traces-")
+_DEFAULT_TRACE_PATH = os.path.join(_TRACE_DIRECTORY.name, "traces.jsonl")
 
 
 def _int(name: str, default: int) -> int:
@@ -45,6 +49,7 @@ class Settings:
     llm_model: str = "llama3.2:3b"
     ollama_url: str = "http://host.minikube.internal:11434"
     ollama_timeout: float = 60.0
+    trace_path: str = field(default_factory=lambda: _DEFAULT_TRACE_PATH)
     hosted_base_url: str = ""        # e.g. an OpenAI-compatible endpoint
     llm_api_key: str = field(default="", repr=False)   # from the Secret; never log it
 
@@ -69,6 +74,7 @@ def get_settings() -> Settings:
         llm_model=os.environ.get("LLM_MODEL", "llama3.2:3b"),
         ollama_url=os.environ.get("OLLAMA_URL", "http://host.minikube.internal:11434"),
         ollama_timeout=_float("OLLAMA_TIMEOUT", 60.0),
+        trace_path=os.environ.get("TRACE_PATH") or _DEFAULT_TRACE_PATH,
         hosted_base_url=os.environ.get("HOSTED_BASE_URL", ""),
         llm_api_key=os.environ.get("LLM_API_KEY", ""),
         log_level=os.environ.get("LOG_LEVEL", "INFO"),

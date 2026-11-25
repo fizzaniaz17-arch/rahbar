@@ -6,14 +6,18 @@ network. Keep them passing, and add your own next to them (section 6).
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
 
 
 @pytest.fixture()
-def client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
+def client(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> TestClient:
     monkeypatch.setenv("RETRIEVER", "stub")
     monkeypatch.setenv("LLM_PROVIDER", "stub")
+    monkeypatch.setenv("TRACE_PATH", str(tmp_path / "traces.jsonl"))
     from app.main import app
 
     with TestClient(app) as c:
@@ -63,6 +67,23 @@ def test_metrics_count_requests_by_route(client: TestClient) -> None:
     assert 'rahbar_requests_total{path="/api/ask",status="200"}' in text
 
 
+def test_query_trace_is_saved_with_prompt_and_retrieved_context(
+    client: TestClient, tmp_path: Path
+) -> None:
+    response = client.post(
+        "/api/ask", json={"question": "What does the academic warning policy say?"}
+    )
+    trace_path = tmp_path / "traces.jsonl"
+    records = [json.loads(line) for line in trace_path.read_text(encoding="utf-8").splitlines()]
+
+    assert response.status_code == 200
+    assert len(records) == 1
+    assert records[0]["trace_id"] == response.json()["request_id"]
+    assert records[0]["retrieved"]
+    assert records[0]["prompt_sha256"]
+    assert records[0]["prompt"][1]["content"]
+
+
 def test_prompt_injection_is_kept_as_untrusted_question_data() -> None:
     import json
 
@@ -76,7 +97,9 @@ def test_prompt_injection_is_kept_as_untrusted_question_data() -> None:
     assert json.loads(prompt[1]["content"])["question"] == question
 
 
-def test_retrieval_failure_is_reported_as_unavailable(client: TestClient) -> None:
+def test_retrieval_failure_is_reported_and_traced(
+    client: TestClient, tmp_path: Path
+) -> None:
     class BrokenRetriever:
         name = "broken"
 
@@ -88,3 +111,8 @@ def test_retrieval_failure_is_reported_as_unavailable(client: TestClient) -> Non
 
     assert response.status_code == 503
     assert response.json()["detail"] == "retrieval service unavailable"
+    records = [
+        json.loads(line)
+        for line in (tmp_path / "traces.jsonl").read_text(encoding="utf-8").splitlines()
+    ]
+    assert records[0]["error_type"] == "RuntimeError"

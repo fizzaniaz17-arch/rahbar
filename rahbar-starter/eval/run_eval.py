@@ -25,7 +25,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import httpx
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 HERE = Path(__file__).resolve().parent
 

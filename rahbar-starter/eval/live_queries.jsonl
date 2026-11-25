@@ -1,0 +1,44 @@
+{"id":"live01","query":"What happens when a student misses the course attendance requirement?","domain":"in_domain","topic":"attendance"}
+{"id":"live02","query":"How much attendance is required under clause 1.21, and what can the HoD excuse?","domain":"in_domain","topic":"attendance"}
+{"id":"live03","query":"What is the longest time allowed to finish a bachelor's degree?","domain":"in_domain","topic":"degree_duration"}
+{"id":"live04","query":"Can the statutory bodies grant extra time beyond the maximum degree duration?","domain":"in_domain","topic":"degree_duration"}
+{"id":"live05","query":"Who must countersign and approve an undergraduate course withdrawal application?","domain":"in_domain","topic":"withdrawal"}
+{"id":"live06","query":"What signatures are required before I can withdraw from a course?","domain":"in_domain","topic":"withdrawal"}
+{"id":"live07","query":"When does the academic-warning count reset for an undergraduate?","domain":"in_domain","topic":"academic_warning"}
+{"id":"live08","query":"What CGPA is needed to reset an academic warning?","domain":"in_domain","topic":"academic_warning"}
+{"id":"live09","query":"What is the BS tuition charge for each credit hour in 2026-27?","domain":"in_domain","topic":"tuition"}
+{"id":"live10","query":"How much does one BS credit hour cost in the Fall 2026 fee schedule?","domain":"in_domain","topic":"tuition"}
+{"id":"live11","query":"May generative AI be my only source when preparing research?","domain":"in_domain","topic":"generative_ai"}
+{"id":"live12","query":"Can students use ChatGPT without consulting any other information source?","domain":"in_domain","topic":"generative_ai"}
+{"id":"live13","query":"Which activities qualify as faculty entrepreneurship under the start-up policy?","domain":"in_domain","topic":"faculty_startups"}
+{"id":"live14","query":"Does holding substantial equity in a technical start-up count as faculty involvement?","domain":"in_domain","topic":"faculty_startups"}
+{"id":"live15","query":"How many courses may an undergraduate repeat during summer?","domain":"in_domain","topic":"summer_repeat"}
+{"id":"live16","query":"Can a student repeat the lab attached to a summer repeat course?","domain":"in_domain","topic":"summer_repeat"}
+{"id":"live17","query":"How many weeks are in the current summer semester?","domain":"in_domain","topic":"summer_duration"}
+{"id":"live18","query":"What is the duration of the undergraduate summer session?","domain":"in_domain","topic":"summer_duration"}
+{"id":"live19","query":"Are new electives offered in summer or only repeat subjects?","domain":"in_domain","topic":"summer_courses"}
+{"id":"live20","query":"Can I take a new course in summer to complete my degree?","domain":"in_domain","topic":"summer_courses"}
+{"id":"live21","query":"How many grade points does a B+ receive in a BS program?","domain":"in_domain","topic":"grading"}
+{"id":"live22","query":"What is the grade-point value of B plus?","domain":"in_domain","topic":"grading"}
+{"id":"live23","query":"What is the minimum attendance percentage for final-exam eligibility?","domain":"in_domain","topic":"attendance"}
+{"id":"live24","query":"Does a medical certificate remove the course attendance requirement?","domain":"in_domain","topic":"attendance"}
+{"id":"live25","query":"How should students disclose assistance from generative AI?","domain":"in_domain","topic":"generative_ai"}
+{"id":"live26","query":"Can an instructor require students to complete an assessment without AI?","domain":"in_domain","topic":"generative_ai"}
+{"id":"live27","query":"How many full-time faculty members are listed for Islamabad?","domain":"in_domain","topic":"faculty_statistics"}
+{"id":"live28","query":"What total faculty count is reported across campuses?","domain":"in_domain","topic":"faculty_statistics"}
+{"id":"live29","query":"How do the current academic rules define a course withdrawal?","domain":"in_domain","topic":"withdrawal"}
+{"id":"live30","query":"What is the deadline to withdraw from a course?","domain":"in_domain","topic":"withdrawal"}
+{"id":"live31","query":"What is the fee refund schedule for tuition payments?","domain":"in_domain","topic":"refund"}
+{"id":"live32","query":"What academic action follows two consecutive warning semesters?","domain":"in_domain","topic":"academic_warning"}
+{"id":"live33","query":"How many priority points are awarded for Islamabad hostel room allocation?","domain":"out_of_domain","topic":"hostel_allocation"}
+{"id":"live34","query":"Where can I download the hostel room-change form?","domain":"out_of_domain","topic":"hostel_forms"}
+{"id":"live35","query":"What time does the campus shuttle leave for the airport?","domain":"out_of_domain","topic":"transport_schedule"}
+{"id":"live36","query":"How can I connect a personal laptop to campus Wi-Fi?","domain":"out_of_domain","topic":"network_access"}
+{"id":"live37","query":"Which parking areas are open to students after 6 pm?","domain":"out_of_domain","topic":"parking"}
+{"id":"live38","query":"What are the opening hours of the Islamabad campus health clinic?","domain":"out_of_domain","topic":"health_services"}
+{"id":"live39","query":"Where can I reserve a badminton court on campus?","domain":"out_of_domain","topic":"sports_facilities"}
+{"id":"live40","query":"Does the university provide an emergency laptop-loan service?","domain":"out_of_domain","topic":"student_services"}
+{"id":"live41","query":"When does the campus cafeteria stop serving dinner?","domain":"out_of_domain","topic":"cafeteria"}
+{"id":"live42","query":"How do I apply for campus accommodation as a visiting researcher?","domain":"out_of_domain","topic":"accommodation"}
+{"id":"live43","query":"Where is the nearest public bus stop outside the university?","domain":"out_of_domain","topic":"public_transit"}
+{"id":"live44","query":"Can the campus bookstore order a specific foreign-language novel?","domain":"out_of_domain","topic":"bookstore"}

@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import logging
+import time
+from pathlib import Path
 
 import httpx
 from fastapi import HTTPException
@@ -10,11 +12,18 @@ from fastapi import HTTPException
 from ..config import Settings
 from ..logjson import request_id_var
 from ..providers.llm.base import LLMProvider
+from ..routes.metrics import (
+    ABSTENTIONS,
+    CACHE_RESULTS,
+    INJECTION_ATTEMPTS,
+    STAGE_LATENCY,
+)
 from ..retrieval.base import Retriever
 from ..retrieval.chroma import ChromaRetriever
 from ..schemas import Answer, AskResponse, Passage, RetrievedRef
 
 from .cache import SemanticCache, cache_key, never_cache
+from .tracing import append_trace, build_trace
 
 log = logging.getLogger("rahbar.answer")
 
@@ -60,36 +69,119 @@ def grounded_answer(question: str, passages: list[Passage], provider: LLMProvide
     return abstain()
 
 
-def answer_question(
-    question: str, retriever: Retriever, provider: LLMProvider, settings: Settings
-) -> AskResponse:
-    vector = None
+def _retrieve(
+    question: str, retriever: Retriever, settings: Settings
+) -> tuple[list[Passage], list[float] | None]:
+    if isinstance(retriever, ChromaRetriever):
+        return retriever.retrieve_with_vector(question, settings.top_k)
+    return retriever.retrieve(question, k=settings.top_k), None
+
+
+def _record_retrieval_failure(
+    question: str,
+    provider: LLMProvider,
+    settings: Settings,
+    elapsed: float,
+    error: Exception,
+) -> None:
+    STAGE_LATENCY.labels(stage="retrieval").observe(elapsed)
+    failed_trace = build_trace(
+        trace_id=request_id_var.get(),
+        question=question,
+        passages=[],
+        evidence=[],
+        answer=abstain(),
+        settings=settings,
+        provider_name=provider.name,
+        cache_hit=False,
+        stage_seconds={"retrieval": elapsed},
+    )
+    failed_trace["error_type"] = type(error).__name__
     try:
-        if isinstance(retriever, ChromaRetriever):
-            passages, vector = retriever.retrieve_with_vector(question, settings.top_k)
-        else:
-            passages = retriever.retrieve(question, k=settings.top_k)
-    except (httpx.HTTPError, RuntimeError, ValueError) as exc:
-        log.warning("retrieval failed: %s", type(exc).__name__)
-        raise HTTPException(status_code=503, detail="retrieval service unavailable") from exc
-    evidence = [passage for passage in passages if passage.score >= settings.relevance_floor]
+        append_trace(
+            settings.trace_path,
+            failed_trace,
+            allowed_directory=Path(settings.trace_path).parent,
+        )
+    except (OSError, ValueError) as trace_error:
+        log.exception("failed to persist query trace after retrieval failure")
+        raise HTTPException(
+            status_code=503, detail="query trace persistence unavailable"
+        ) from trace_error
+    log.info(
+        "query trace persisted",
+        extra={
+            "trace_id": failed_trace["trace_id"],
+            "error_type": failed_trace["error_type"],
+        },
+    )
+    log.warning("retrieval failed: %s", type(error).__name__)
+
+
+def _generate_or_get_cached_answer(
+    question: str,
+    evidence: list[Passage],
+    vector: list[float] | None,
+    provider: LLMProvider,
+    settings: Settings,
+) -> tuple[Answer, bool, bool, dict[str, float]]:
     answer = None
     cached = False
+    cache_checked = False
+    stage_seconds: dict[str, float] = {}
     if evidence and vector is not None:
         cache = SemanticCache(settings)
         try:
             key = cache_key(settings, evidence)
+            cache_started = time.perf_counter()
             answer = cache.get(key, vector)
             cached = answer is not None
+            cache_checked = True
+            stage_seconds["cache_lookup"] = time.perf_counter() - cache_started
             if answer is None:
+                generation_started = time.perf_counter()
                 answer = grounded_answer(question, evidence, provider)
+                stage_seconds["generation"] = time.perf_counter() - generation_started
                 if not never_cache(answer):
                     cache.put(key, vector, answer)
         finally:
             cache.redis.close()
     if answer is None:
+        generation_started = time.perf_counter()
         answer = grounded_answer(question, evidence, provider)
+        stage_seconds["generation"] = time.perf_counter() - generation_started
+    return answer, cached, cache_checked, stage_seconds
 
+
+def _observe_answer_metrics(
+    answer: Answer, cached: bool, cache_checked: bool, stage_seconds: dict[str, float]
+) -> None:
+    for stage in ("cache_lookup", "generation"):
+        if stage in stage_seconds:
+            STAGE_LATENCY.labels(stage=stage).observe(stage_seconds[stage])
+    if cache_checked:
+        CACHE_RESULTS.labels(result="hit" if cached else "miss").inc()
+    if not answer.answered_from_context:
+        ABSTENTIONS.inc()
+
+
+def answer_question(
+    question: str, retriever: Retriever, provider: LLMProvider, settings: Settings
+) -> AskResponse:
+    started = time.perf_counter()
+    try:
+        passages, vector = _retrieve(question, retriever, settings)
+    except (httpx.HTTPError, RuntimeError, ValueError) as exc:
+        _record_retrieval_failure(
+            question, provider, settings, time.perf_counter() - started, exc
+        )
+        raise HTTPException(status_code=503, detail="retrieval service unavailable") from exc
+    STAGE_LATENCY.labels(stage="retrieval").observe(time.perf_counter() - started)
+    evidence = [passage for passage in passages if passage.score >= settings.relevance_floor]
+    answer, cached, cache_checked, stage_seconds = _generate_or_get_cached_answer(
+        question, evidence, vector, provider, settings
+    )
+    _observe_answer_metrics(answer, cached, cache_checked, stage_seconds)
     log.info(
         "answered",
         extra={
@@ -100,6 +192,34 @@ def answer_question(
             "chunk_ids": [p.chunk_id for p in passages],
             "scores": [round(p.score, 4) for p in passages],
             "answered_from_context": answer.answered_from_context,
+        },
+    )
+    trace = build_trace(
+        trace_id=request_id_var.get(),
+        question=question,
+        passages=passages,
+        evidence=evidence,
+        answer=answer,
+        settings=settings,
+        provider_name=provider.name,
+        cache_hit=cached,
+        stage_seconds=stage_seconds,
+    )
+    if trace["guardrails"]["injection_detected"]:
+        INJECTION_ATTEMPTS.inc()
+    try:
+        append_trace(
+            settings.trace_path, trace, allowed_directory=Path(settings.trace_path).parent
+        )
+    except (OSError, ValueError) as exc:
+        log.exception("failed to persist query trace")
+        raise HTTPException(status_code=503, detail="query trace persistence unavailable") from exc
+    log.info(
+        "query trace persisted",
+        extra={
+            "trace_id": trace["trace_id"],
+            "cache_hit": cached,
+            "injection_detected": trace["guardrails"]["injection_detected"],
         },
     )
     return AskResponse(

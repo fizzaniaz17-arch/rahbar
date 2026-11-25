@@ -58,12 +58,43 @@ The dev overlay intentionally uses a dummy index and stub answers.
 | GET | `/metrics` | Prometheus request and latency metrics. |
 | POST | `/api/ask` | Grounded answer with citations and retrieved passages. |
 
+### Trace and coverage tools
+
+Query traces are emitted as JSON logs and written to the configured trace file
+(`TRACE_PATH`, defaulting to the OS temporary directory; Kubernetes mounts a
+persistent claim at `/traces/traces.jsonl`):
+
+```sh
+cd api
+python -m app.trace_inspect --trace-id REQUEST_ID
+python -m app.trace_metrics --hours 24
+```
+
+Query coverage uses the configured Ollama embedding model; it does not invent a
+coverage score when the model service is unavailable:
+
+```sh
+cd ..
+python eval/coverage.py --ollama-url http://localhost:11434
+```
+
 ### Existing development evidence
 
 The image below is an existing CI development-smoke capture committed with the repository; it
 is not evidence of a Minikube deployment run in this workspace.
 
 ![Existing CI development smoke evidence](docs/evidence/ci-development-smoke-pass.png)
+
+### Current cluster evidence
+
+This Swagger UI capture was taken from the running `rahbar-real-eval` API on
+2026-11-25. It documents the current API surface; it is not evidence of a
+model-backed evaluation or a deployment of the unpushed tracing changes.
+
+![Current cluster API documentation](docs/evidence/live-api-docs-2026-11-25.png)
+
+See the [Kubernetes runbook](k8s/README.md) for deployment, tracing, and
+troubleshooting commands.
 
 ## Kubernetes development smoke test
 
