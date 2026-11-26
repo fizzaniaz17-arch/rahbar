@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+import yaml
 
 from eval.run_eval import (
     GateThresholds,
@@ -69,3 +70,29 @@ def test_cli_paths_must_remain_under_an_approved_root(tmp_path: Path) -> None:
     assert resolve_cli_path(inside, (project,)) == inside
     with pytest.raises(ValueError, match="approved directory"):
         resolve_cli_path(tmp_path / "outside.json", (project,))
+
+
+def test_assignment_golden_set_has_required_distribution() -> None:
+    data = yaml.safe_load(
+        (Path(__file__).resolve().parent / "golden.yaml").read_text(encoding="utf-8")
+    )
+    questions = data["questions"]
+    answerable = [
+        item for item in questions
+        if not item.get("must_abstain") and item.get("relevant")
+    ]
+    abstain = [item for item in questions if item.get("must_abstain")]
+    difficult = [item for item in questions if item["difficulty"] == "difficult"]
+    human = [item for item in questions if item["origin"] == "human"]
+    synthetic = [item for item in questions if item["origin"] == "synthetic"]
+    reviewed_synthetic = [
+        item for item in synthetic
+        if item.get("manual_review") and item.get("synthetic_review")
+    ]
+
+    assert len(questions) >= 25
+    assert len(answerable) >= 15
+    assert len(abstain) >= 5
+    assert len(difficult) >= 5
+    assert len(human) >= 8
+    assert len(reviewed_synthetic) >= 8

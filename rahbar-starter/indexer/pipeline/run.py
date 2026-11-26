@@ -10,6 +10,7 @@ Kubernetes retries it up to the Job's backoffLimit.
 from __future__ import annotations
 
 import argparse
+from dataclasses import asdict
 import json
 import os
 import sys
@@ -18,6 +19,7 @@ from pathlib import Path
 
 from .config import IndexerSettings, get_settings
 from .models import Chunk
+from .verification import verify_document, write_verification_report
 
 
 def log(msg: str, **fields: object) -> None:
@@ -74,12 +76,35 @@ def run_pipeline(settings: IndexerSettings) -> int:
     if not documents:
         raise SystemExit(f"no documents found in {settings.corpus_dir}")
     all_chunks: list[Chunk] = []
+    verification_results = []
+    quarantine_dir = Path(settings.corpus_dir).parent / "quarantine"
+    known_hashes: dict[str, str] = {}
+    manifest = Path(settings.corpus_dir).parent / "document-hashes.json"
+    if manifest.exists():
+        known_hashes = json.loads(manifest.read_text(encoding="utf-8"))
     for path, doc_version, superseded in documents:
         log("extracting", source=path.name)
-        doc = clean(extract(str(path), doc_version, superseded))
+        extracted = extract(str(path), doc_version, superseded)
+        result = verify_document(path, extracted, known_hashes=known_hashes)
+        verification_results.append(result)
+        known_hashes[path.name] = result.sha256
+        if result.overall == "FAIL":
+            quarantine_dir.mkdir(parents=True, exist_ok=True)
+            (quarantine_dir / f"{path.name}.json").write_text(
+                json.dumps(asdict(result), indent=2), encoding="utf-8"
+            )
+            log("document quarantined", source=path.name, reasons=result.reasons)
+            continue
+        doc = clean(extracted)
         pieces = chunk(doc, settings.chunk_size, settings.chunk_overlap)
         log("chunked", source=path.name, chunks=len(pieces))
         all_chunks.extend(pieces)
+
+    manifest.write_text(json.dumps(known_hashes, indent=2), encoding="utf-8")
+    write_verification_report(
+        Path(settings.corpus_dir).parent / "verification-report.json",
+        verification_results,
+    )
 
     existing = existing_records(settings)
     reusable, pending = reusable_embeddings(all_chunks, existing)

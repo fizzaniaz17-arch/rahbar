@@ -1,0 +1,22 @@
+{
+  "audit_date": "2026-11-27",
+  "branch": "feature/ragops-assignment-03-tracing",
+  "requirements": [
+    {"id":"A1","status":"PARTIALLY IMPLEMENTED","files":["indexer/pipeline/verification.py","indexer/pipeline/run.py"],"verification":"cd indexer && python -m pytest -q","missing":["Batch B execution","real embedding near-duplicate check"]},
+    {"id":"A2","status":"IMPLEMENTED BUT UNVERIFIED","files":["indexer/pipeline/store.py","indexer/tests/test_incremental.py"],"verification":"cd indexer && python -m pytest -q","missing":["Chroma integration proof"]},
+    {"id":"A3","status":"NOT IMPLEMENTED","files":[],"verification":"repository inspection","missing":["complete Batch B corpus"]},
+    {"id":"B1","status":"COMPLETE AND VERIFIED","files":["eval/golden.yaml","eval/test_run_eval.py"],"verification":"golden count command and cd eval && python -m pytest -q","missing":[]},
+    {"id":"B2","status":"NOT IMPLEMENTED","files":[],"verification":"none","missing":["embedding experiment and results"]},
+    {"id":"B3","status":"IMPLEMENTED BUT UNVERIFIED","files":["eval/run_eval.py","eval/test_run_eval.py"],"verification":"cd eval && python -m pytest -q","missing":["noise before/after execution"]},
+    {"id":"B4","status":"PARTIALLY IMPLEMENTED","files":["eval/run_eval.py","eval/results"],"verification":"eval unit tests and existing live results","missing":["model-backed faithfulness and judge agreement"]},
+    {"id":"C","status":"IMPLEMENTED BUT UNVERIFIED","files":["eval/run_eval.py","eval/gate.yaml","eval/baseline.json"],"verification":"cd eval && python -m pytest -q","missing":["candidate/baseline actual runs"]},
+    {"id":"D","status":"IMPLEMENTED BUT UNVERIFIED","files":["api/app/services/tracing.py","api/app/trace_inspect.py","api/app/trace_metrics.py"],"verification":"cd api && python -m pytest -q","missing":["deployed reconstruction and root-cause evidence"]},
+    {"id":"E","status":"IMPLEMENTED BUT UNVERIFIED","files":["eval/coverage.py","eval/live_queries.jsonl"],"verification":"44-query count and eval tests","missing":["Ollama before/after drift execution"]},
+    {"id":"F1","status":"IMPLEMENTED BUT UNVERIFIED","files":["k8s/base","k8s/overlays"],"verification":"manifest inspection","missing":["live Kubernetes proof"]},
+    {"id":"F2","status":"IMPLEMENTED BUT UNVERIFIED","files":["k8s/base/indexer-job.yaml","k8s/base/reindex-cronjob.yaml","k8s/base/evaluation-job.yaml"],"verification":"manifest inspection","missing":["live Job execution"]},
+    {"id":"F3","status":"IMPLEMENTED BUT UNVERIFIED","files":["k8s/base/api.yaml","k8s/base/candidate-api.yaml","k8s/base/services.yaml"],"verification":"manifest inspection","missing":["candidate rollout and rollback proof"]},
+    {"id":"F4","status":"BLOCKED","files":["api/app/routes/metrics.py","api/app/services/tracing.py"],"verification":"API tests","missing":["running metrics and kubectl logs"]},
+    {"id":"F5","status":"BLOCKED","files":["k8s/base"],"verification":"manifest inspection","missing":["live kubectl top measurements"]},
+    {"id":"G","status":"PARTIALLY IMPLEMENTED","files":["docs/REPORT.md","docs/evidence"],"verification":"repository inspection","missing":["PDF","fresh screenshots","second-member details"]}
+  ]
+}

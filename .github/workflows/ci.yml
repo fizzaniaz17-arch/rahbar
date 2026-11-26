@@ -79,6 +79,8 @@ jobs:
             docker build -t "rahbar-$component:dev" "$component"
             kind load docker-image "rahbar-$component:dev" --name rahbar
           done
+          docker build -t rahbar-evaluation:dev eval
+          kind load docker-image rahbar-evaluation:dev --name rahbar
       - name: Apply development overlay and wait for readiness
         run: |
           kubectl apply -k k8s/overlays/dev
@@ -159,6 +161,8 @@ jobs:
             docker build -t "rahbar-$component:dev" "$component"
             kind load docker-image "rahbar-$component:dev" --name rahbar
           done
+          docker build -t rahbar-evaluation:dev eval
+          kind load docker-image rahbar-evaluation:dev --name rahbar
       - name: Deploy fixture overlay
         run: |
           kubectl apply -k k8s/overlays/eval

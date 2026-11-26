@@ -1,0 +1,42 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: evaluation
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 900
+  template:
+    spec:
+      serviceAccountName: api
+      automountServiceAccountToken: false
+      containers:
+      - name: evaluation
+        image: rahbar-evaluation:dev
+        command:
+        - python
+        args:
+        - eval/run_eval.py
+        - --api
+        - http://api:8000
+        - --golden
+        - /app/eval/golden.yaml
+        - --out
+        - /evaluation/results/result.json
+        envFrom:
+        - configMapRef:
+            name: rahbar-config
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: '1'
+            memory: 512Mi
+        volumeMounts:
+        - name: results
+          mountPath: /evaluation
+      restartPolicy: Never
+      volumes:
+      - name: results
+        persistentVolumeClaim:
+          claimName: rahbar-evaluation-results

@@ -7,12 +7,15 @@ resources:
 - services.yaml
 - configmap.yaml
 - traces-pvc.yaml
+- evaluation-results-pvc.yaml
 - api.yaml
 - ui.yaml
 - chroma-statefulset.yaml
 - redis.yaml
 - indexer-job.yaml
 - reindex-cronjob.yaml
+- evaluation-job.yaml
+- candidate-api.yaml
 - ingress.yaml
 - hpa.yaml
 - networkpolicy.yaml
