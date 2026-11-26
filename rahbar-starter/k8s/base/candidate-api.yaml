@@ -15,10 +15,23 @@ spec:
     spec:
       serviceAccountName: api
       automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: api
         image: rahbar-api:dev
         imagePullPolicy: IfNotPresent
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
         envFrom:
         - configMapRef:
             name: rahbar-config
@@ -42,9 +55,13 @@ spec:
             port: 8000
           periodSeconds: 10
         volumeMounts:
+        - name: tmp
+          mountPath: /tmp
         - name: traces
           mountPath: /traces
       volumes:
+      - name: tmp
+        emptyDir: {}
       - name: traces
         persistentVolumeClaim:
           claimName: rahbar-traces

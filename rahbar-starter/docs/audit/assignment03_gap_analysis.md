@@ -1,37 +1,58 @@
 # Assignment 03 Gap Analysis
 
-Audit date: 2026-11-27. Repository state: branch `feature/ragops-assignment-03-tracing`; git working tree clean before changes.
+Audit date: 2026-11-27. The current branch is
+`feature/ragops-assignment-03-tracing`; the fixes described by this audit are
+uncommitted and have not been pushed.
+
+The latest local checks passed: API 23 tests, indexer 10 tests, evaluation 19
+tests, mypy for API/indexer, Ruff for API/indexer/eval/corpus, and Kustomize
+rendering for dev/prod/eval. These checks do not prove a live deployment.
 
 ## Status key
 
-- COMPLETE AND VERIFIED: code exists and execution evidence is available.
-- IMPLEMENTED BUT UNVERIFIED: code exists but environment execution is unavailable.
-- PARTIALLY IMPLEMENTED: useful behavior exists but a required end-to-end workflow is missing.
-- BROKEN: execution found a defect.
-- NOT IMPLEMENTED: functionality is absent.
-- BLOCKED: blocked by unavailable credentials, daemon, cluster, or external service.
+- **COMPLETE AND VERIFIED:** implementation and direct evidence satisfy the
+  requirement.
+- **PARTIAL:** some implementation or evidence exists, but an important
+  end-to-end requirement is missing.
+- **IMPLEMENTED BUT UNVERIFIED:** implementation exists but needs live or
+  integration proof.
+- **NOT IMPLEMENTED:** required implementation or experiment is absent.
+- **BLOCKED:** safe verification depends on environment recovery or external
+  user-provided facts.
 
-| Requirement ID | Required functionality | Current implementation | Verification command/evidence | Missing functionality | Corrective action | Final status |
-|---|---|---|---|---|---|---|
-| A1 | Verification after extraction; quality/completeness/recency/uniqueness; quarantine/report | `indexer/pipeline/verification.py` and pipeline integration | `cd indexer && python -m pytest -q` | Real Batch B execution and near-duplicate embedding integration | Run corpus with real files and embedding vectors | PARTIALLY IMPLEMENTED |
-| A2 | Incremental unchanged/changed/deleted/version behavior | Stable chunk IDs, reusable vectors, stale deletion, superseded metadata | `cd indexer && python -m pytest -q` | Chroma integration execution | Run against the existing persistent Chroma cluster | IMPLEMENTED BUT UNVERIFIED |
-| A3 | Batch A/B planted problems | Fixture Batch is present; no complete Batch B corpus | Repository corpus/fixture inspection | 10-document Batch B corpus | Add authorized source documents or explicit synthetic corpus with required planted problems | NOT IMPLEMENTED |
-| B1 | 25+ golden questions and labels | `eval/golden.yaml`: 26 questions, 21 answerable, 5 abstain, 11 difficult, 16 human, 10 synthetic and reviewed | Python count plus eval test | Independent manual label evidence | Confirm manual labels and add evidence | COMPLETE AND VERIFIED |
-| B2 | Embedding similarity, determinism, timing | Evaluation code absent for these standalone measurements | Unit eval suite | Embedding experiment script/results | Implement and run Ollama experiment | NOT IMPLEMENTED |
-| B3 | Recall@3/5, MRR, nDCG, noise experiment | Metrics implemented in `eval/run_eval.py`; tests pass | `cd eval && python -m pytest -q` | Noise/typo before-after run | Run live suite with noise corpus | IMPLEMENTED BUT UNVERIFIED |
-| B4 | Faithfulness, abstention, citation, latency | Retrieval and citation metrics implemented | Existing fixture and live result evidence | Model-backed faithfulness/judge evidence | Run with Ollama and labels | PARTIALLY IMPLEMENTED |
-| C | Baseline/candidate, module/component/e2e gate, pass/fail results | Configurable gate exists; baseline exists | Eval unit tests | Candidate pipeline and actual candidate/baseline runs | Add and run candidate evaluation | IMPLEMENTED BUT UNVERIFIED |
-| D | JSONL traces, reconstruction, metrics, guardrails/root cause | `tracing.py`, `trace_inspect.py`, `trace_metrics.py`, guardrail detection | API unit tests | Deployed trace and root-cause run | Rebuild/deploy API with Docker | IMPLEMENTED BUT UNVERIFIED |
-| E | 44 live queries, coverage, drift experiment | 44-query dataset and coverage script exist | Count command and eval tests | Ollama model-backed before/after result | Run coverage and drift in cluster | IMPLEMENTED BUT UNVERIFIED |
-| F1 | Deployments, StatefulSet, services, all PVCs | Core manifests plus trace and evaluation PVCs | Kustomize code inspection | Real resource/persistence rollout | Docker daemon and Minikube required | IMPLEMENTED BUT UNVERIFIED |
-| F2 | Ingestion/evaluation Jobs, CronJob, ConfigMap gate | Job, CronJob and evaluation Job manifests exist | Manifest inspection | Live Job execution and threshold reload proof | Run against cluster | IMPLEMENTED BUT UNVERIFIED |
-| F3 | Candidate/baseline, separate services/collections, rollout/rollback | Candidate Deployment and Service added; baseline remains `api` | Manifest inspection | Candidate evaluation and rollback proof | Apply clean profile or existing profile with Docker | IMPLEMENTED BUT UNVERIFIED |
-| F4 | JSONL logs, metrics port-forward | Trace and metrics endpoints implemented | API tests | Live port-forward/log proof | Start Docker/Minikube | BLOCKED |
-| F5 | Resource requests/limits and measurements | Manifests define requests/limits | Manifest inspection | `kubectl top` measurements | Start Docker/Minikube | BLOCKED |
-| G | Report, charts, PDF, screenshots, student information | Existing report and evidence, PDF status not verified | Repository inspection | Eight-page PDF, second-member details, fresh screenshots | Manual/user participation plus report generation | PARTIALLY IMPLEMENTED |
+| Requirement | Status | Evidence and remaining work |
+|---|---|---|
+| A1 — verification, quality, recency, uniqueness, quarantine | PARTIAL | Verification pipeline and writable state path implemented and unit-tested; complete quality checks, Batch B execution, and pipeline-integrated embedding near-duplicate detection remain |
+| A2 — incremental unchanged/changed/deleted/version behavior | IMPLEMENTED BUT UNVERIFIED | Unit tests pass; live Chroma integration proof remains |
+| A3 — Batch A/B corpus and planted problems | NOT IMPLEMENTED | Complete Batch B corpus and execution are absent |
+| B1 — 25+ golden questions with labels | PARTIAL | 26 questions and distribution tests exist; independent authorship and manual review are unconfirmed |
+| B2 — embedding similarity, determinism, timing | NOT IMPLEMENTED | Standalone experiment and measured results are absent |
+| B3 — retrieval metrics and noise experiment | IMPLEMENTED BUT UNVERIFIED | Metric implementation and tests pass; a 26-question live run timed out on q01 and produced no results; noise experiment remains |
+| B4 — faithfulness, abstention, citation, latency | PARTIAL | Existing historical failed 15-question run and one later successful live query; no complete model-backed evaluation or judge evidence |
+| C — baseline/candidate release gate | PARTIAL | Gate and opt-in evaluation manifests exist; candidate-specific indexing, comparison, promotion, and rollback are unverified |
+| D — JSONL traces, reconstruction, metrics, root cause | IMPLEMENTED BUT UNVERIFIED | Local implementation/tests exist; current live deployment lacks proof of trace reconstruction and metric evidence |
+| E — live queries, coverage, drift | IMPLEMENTED BUT UNVERIFIED | 44-query dataset and tooling exist; model-backed coverage and drift experiments are absent |
+| F1 — deployments, services, PVCs | IMPLEMENTED BUT UNVERIFIED | Dev/prod/eval Kustomize renders pass; current branch not deployed as a whole |
+| F2 — ingestion/evaluation Jobs and gate configuration | PARTIAL | Indexer state PVC, fixture overlay, and opt-in evaluation Job render; successful real Job execution and threshold reload proof remain |
+| F3 — candidate/baseline and rollback | PARTIAL | Candidate manifests remain opt-in; candidate indexing, release, and rollback proof remain |
+| F4 — traces, logs, metrics | PARTIAL | API tests and one live query pass; live trace/log/metrics evidence for the request is missing |
+| F5 — resource measurements | BLOCKED | Full evaluation reached approximately 5.8/6 GiB Minikube memory with high CPU and Kubernetes API timeouts; wait for recovery before sampling |
+| G — report, PDF, screenshots, team details | PARTIAL | Report and audit updated; final PDF, new screenshots, second-member details, and confirmed contributions remain |
 
-## Principal unresolved blockers
+## Cluster and evaluation evidence
 
-1. Docker Desktop/daemon is unavailable, so no Minikube or Kubernetes execution can occur.
-2. Ollama models are unavailable, so model-backed evaluation and coverage are blocked.
-3. The second member's personal details and confirmed contributions are unavailable.
+With the user's approval, two Ollama models were downloaded into the existing
+Ollama pod's non-persistent writable layer and an HTTPS registry egress policy
+was applied to the existing namespace. One request to the existing API
+succeeded with five retrieved passages and two citations. This was not a
+deployment of the current branch.
+
+The 26-question evaluation timed out on its first question and produced no
+metrics. The existing Minikube profile, Chroma data, PVCs, and user work were
+preserved. Further inference was paused to avoid worsening cluster pressure.
+Do not treat the timeout as an evaluation result or restart/replace the
+existing profile to recover it.
+
+See [`ASSIGNMENT_03_AUDIT.md`](./ASSIGNMENT_03_AUDIT.md) for the concise audit
+and [`assignment03_audit.json`](./assignment03_audit.json) for structured
+requirement statuses.

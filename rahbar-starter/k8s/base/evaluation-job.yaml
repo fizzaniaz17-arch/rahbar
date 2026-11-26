@@ -6,22 +6,37 @@ spec:
   backoffLimit: 1
   activeDeadlineSeconds: 900
   template:
+    metadata:
+      labels:
+        app: evaluation
     spec:
       serviceAccountName: api
       automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: evaluation
         image: rahbar-evaluation:dev
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
         command:
-        - python
+        - sh
+        - -ec
         args:
-        - eval/run_eval.py
-        - --api
-        - http://api:8000
-        - --golden
-        - /app/eval/golden.yaml
-        - --out
-        - /evaluation/results/result.json
+        - >-
+          exec python -m eval.run_eval --api http://api:8000
+          --golden /app/eval/golden.yaml
+          --gate-config /app/eval/runtime-config/gate.yaml
+          --out "/app/eval/results/evaluation-$(date -u +%Y%m%dT%H%M%SZ).json"
         envFrom:
         - configMapRef:
             name: rahbar-config
@@ -33,10 +48,20 @@ spec:
             cpu: '1'
             memory: 512Mi
         volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: release-gate
+          mountPath: /app/eval/runtime-config
+          readOnly: true
         - name: results
-          mountPath: /evaluation
+          mountPath: /app/eval/results
       restartPolicy: Never
       volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: release-gate
+        configMap:
+          name: rahbar-release-gate
       - name: results
         persistentVolumeClaim:
           claimName: rahbar-evaluation-results

@@ -22,7 +22,7 @@ patches:
     name: indexer
   patch: |-
     - op: replace
-      path: /spec/template/spec/volumes/1
+      path: /spec/template/spec/volumes/2
       value: {name: corpus, configMap: {name: fixture-corpus}}
 - target:
     kind: CronJob

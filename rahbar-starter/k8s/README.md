@@ -19,10 +19,18 @@ kubectl -n rahbar rollout status deployment/ui --timeout=3m
 make ask Q="What does the starter return?"
 ```
 
-The Kustomize base creates the namespace, ConfigMap, trace PVC, vector-store
-PVC, Chroma StatefulSet, API and UI Deployments, Services, indexer Job/CronJob,
-Ingress, HPA, and NetworkPolicies. The indexer Job is the only component that
-writes to Chroma. The API replicas are read-only.
+The Kustomize base creates the namespace, runtime and release-gate ConfigMaps,
+trace, indexer-state, evaluation-results, and vector-store PVCs, Chroma
+StatefulSet, API and UI Deployments, Services, indexer Job/CronJob, Ingress,
+HPA, and NetworkPolicies. Verification reports, quarantine copies, and archived
+documents are written to the indexer-state PVC, not beside the read-only corpus
+mount. The indexer Job is the only component that writes to Chroma; API and
+candidate API replicas are readers.
+
+The evaluation Job and candidate Deployment manifests are intentionally
+opt-in: applying the base overlay must not start evaluation before ingestion
+has created the target collection, nor start a candidate against an empty
+collection.
 
 ## Real corpus and models
 
@@ -40,9 +48,32 @@ kubectl -n rahbar rollout status deployment/api --timeout=5m
 ```
 
 Do not run the real-corpus Job until the embedding model and persistent corpus
-are ready. The current repository does not implement a separate candidate
-collection, evaluation Job, or promotion gate; this runbook does not claim
-candidate releases or rollback verification.
+are ready. Ollama must be able to reach its model registry over HTTPS; the
+`allow-ollama-registry-egress` policy permits TCP 443 from Ollama pods while
+the default-deny policy remains in effect for other traffic.
+
+## Evaluation Job and thresholds
+
+After the target API is ready and its collection has been indexed, run the
+standalone Job manifest:
+
+```sh
+kubectl -n rahbar apply -f k8s/base/evaluation-job.yaml
+kubectl -n rahbar wait --for=condition=complete job/evaluation --timeout=20m
+kubectl -n rahbar logs job/evaluation
+```
+
+The Job writes its timestamped evaluation output to the
+`rahbar-evaluation-results` PVC and reads thresholds from the
+`rahbar-release-gate` ConfigMap. Edit that ConfigMap before creating a new Job
+to test a different threshold without rebuilding the image. Preserve old Job
+logs by using a unique Job name for each run.
+
+The candidate Deployment and Service use the `rahbar-candidate` collection.
+The current repository does not yet provide a candidate-specific indexer,
+promotion controller, or a verified release/rollback workflow. Do not send
+traffic to the candidate until its collection is populated and the candidate
+has passed evaluation.
 
 ## Traces, metrics and rollback
 

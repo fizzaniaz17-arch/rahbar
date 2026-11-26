@@ -39,9 +39,14 @@ spec:
         volumeMounts:
         - name: tmp
           mountPath: /tmp
+        - name: state
+          mountPath: /indexer-state
         envFrom:
         - configMapRef:
             name: rahbar-config
+        env:
+        - name: INDEXER_STATE_DIR
+          value: /indexer-state
         args:
         - --dummy
         command:
@@ -54,4 +59,7 @@ spec:
       volumes:
       - name: tmp
         emptyDir: {}
+      - name: state
+        persistentVolumeClaim:
+          claimName: rahbar-indexer-state
       restartPolicy: OnFailure

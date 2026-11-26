@@ -6,7 +6,9 @@ resources:
 - accounts.yaml
 - services.yaml
 - configmap.yaml
+- release-gate-configmap.yaml
 - traces-pvc.yaml
+- indexer-state-pvc.yaml
 - evaluation-results-pvc.yaml
 - api.yaml
 - ui.yaml
@@ -14,8 +16,8 @@ resources:
 - redis.yaml
 - indexer-job.yaml
 - reindex-cronjob.yaml
-- evaluation-job.yaml
-- candidate-api.yaml
 - ingress.yaml
 - hpa.yaml
 - networkpolicy.yaml
+- candidate-evaluation-networkpolicy.yaml
+- ollama-registry-egress.yaml

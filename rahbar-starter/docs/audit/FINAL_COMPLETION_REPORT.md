@@ -1,75 +1,85 @@
 # Final Completion Report
 
-## 1. Original project condition
+## Outcome
 
-The project already contained a FastAPI RAG API, Chroma retrieval, incremental chunk-vector reuse, JSONL trace code, coverage tooling, evaluation metrics, Kubernetes manifests, CI/CD workflows, and evidence files. The 15-question golden set and live cluster evidence existed, but key assignment workflows were not complete.
+**Assignment status: partial; not ready to claim full completion.** The source
+and manifests have been improved and local checks pass, but several required
+model-backed experiments, candidate workflows, and submission artifacts remain
+unverified or incomplete.
 
-## 2. Audit results
+## Changes in this worktree
 
-See `assignment03_gap_analysis.md` and `assignment03_audit.json`. No status is marked complete without execution evidence.
+- Fixed indexer verification/quarantine/archive state output to use a
+  configurable writable directory, with a persistent state PVC in Kubernetes.
+- Hardened candidate and evaluation pod security contexts.
+- Made evaluation output timestamped and mounted its threshold/results paths
+  at locations accepted by the evaluation runner.
+- Kept candidate and evaluation workloads opt-in so a default fixture deploy
+  cannot evaluate before indexing.
+- Added candidate/evaluation network policy and Ollama registry HTTPS egress
+  policy; the latter was applied to the existing `rahbar` namespace with user
+  approval.
+- Extended the CI indexer wait to twelve minutes and updated the Kubernetes
+  runbook.
 
-## 3. Remaining work identified
+## Verification
 
-- Complete document verification integration and real Batch B execution.
-- Add standalone embedding evaluation and noise experiment results.
-- Run model-backed evaluation and candidate comparison.
-- Deploy traces and prove reconstruction, metrics, rollout, and rollback.
-- Complete Kubernetes resource and persistence measurements.
-- Generate final PDF and screenshots.
-- Obtain second-member details and contribution confirmation.
+- API tests: 23 passed.
+- Indexer tests: 10 passed.
+- Evaluation tests: 19 passed.
+- mypy: API (26 source files) and indexer (11 source files) passed.
+- Ruff passed for API, indexer, eval, and corpus.
+- Kustomize rendering passed for dev, prod, and eval overlays. The eval overlay
+  was additionally checked for the indexer-state PVC and fixture corpus mount,
+  and for keeping evaluation/candidate workloads opt-in.
+- `git diff --check` passed.
 
-## 4. Changes implemented
+These are local checks. The modified API image was not deployed, and the
+evaluation image has not been rebuilt after its final Dockerfile edit.
 
-- Added `indexer/pipeline/verification.py` and pipeline quarantine/report integration.
-- Added verification unit tests.
-- Expanded `eval/golden.yaml` to 26 labelled questions.
-- Added golden-distribution test.
-- Added evaluation-results PVC and evaluation Job manifest.
-- Added candidate API Deployment and separate candidate Service.
-- Added audit gap analysis and machine-readable audit JSON.
+## Live environment and evidence
 
-## 5. Tests executed
+The existing `rahbar-real-eval` Minikube profile, Chroma data, PVCs, and
+uncommitted work were preserved. The user approved pulling models into the
+existing Ollama pod's writable layer; `nomic-embed-text` and `llama3.2:3b`
+were downloaded. The model directory is not backed by a PVC, so a pod
+replacement can remove those models. The Ollama HTTPS egress policy was
+applied; no profile or data volume was deleted.
 
-- API: 23 passed.
-- Indexer: 9 passed.
-- Evaluation: 18 passed before the final golden test; rerun required after test addition.
-- Golden distribution command: 26 total, 21 answerable, 5 abstain, 11 difficult, 16 human, 10 synthetic-reviewed.
-- Docker inventory: Docker daemon unavailable; Docker Desktop executable not found.
-- Git status: clean before changes.
+One request against the already-running API returned HTTP 200, used the Ollama
+provider, retrieved five passages, returned two citations, and answered from
+context. This verifies a single query against the existing deployment, not
+the current uncommitted source branch.
 
-## 6. Experimental results
+A subsequent 26-question live evaluation timed out on its first question and
+produced no metrics. During this attempt the Minikube container reached about
+5.8/6 GiB memory and high CPU, followed by Kubernetes API TLS timeouts. Further
+model requests were paused to protect the existing cluster. Do not report the
+attempt as a completed evaluation or infer scores from it.
 
-No new model metrics were fabricated. Existing evidence reports a failed model-backed 15-question live run: recall@3/5 and MRR/nDCG were 0, abstention correctness was 1.0, and the gate failed because retrieval was unavailable.
+An earlier historical 15-question run in `docs/REPORT.md` failed retrieval
+because the Ollama embedding model was absent at that time. Keep that historical
+result separate from the later single successful query and the timed-out full
+run.
 
-## 7. Kubernetes status
+## Remaining work and blockers
 
-No live Kubernetes resources were changed or claimed. The existing `rahbar-real-eval` profile could not be accessed because Docker was stopped and the Docker Desktop executable was absent. No Minikube profile was deleted or recreated.
+- Run a complete model-backed evaluation only after the existing cluster has
+  demonstrably recovered; no full evaluation metrics currently exist.
+- Complete Batch B document verification, embedding experiment, noise/drift
+  experiments, and Chroma incremental integration proof.
+- Implement and verify candidate indexing, comparison, promotion, and rollback.
+- Verify deployed trace persistence/reconstruction, live metrics, and resource
+  measurements.
+- Validate the final manifests with the intended Kubernetes schema/security
+  tools; rendering alone is not schema or live-cluster validation.
+- Generate the requested final PDF and fresh evidence screenshots.
+- Obtain second-member identity, contribution confirmation, and required
+  authorship/AI declaration confirmation. Golden question provenance and
+  independent manual review are also unconfirmed.
 
-## 8. Release gate
+## Repository state
 
-The configurable gate code passed unit tests. Passing/failing live candidates were not executed.
-
-## 9. Rollback
-
-Not executed. No rollback success or trace evidence is claimed.
-
-## 10. Submission readiness
-
-- GitHub repository: source branch available; no push or commit is claimed.
-- README: exists.
-- Kubernetes manifests: partially implemented.
-- Evaluation files: existing results and expanded golden set.
-- Traces: code implemented, live deployment unverified.
-- PDF: not generated.
-- Screenshots: existing evidence only; new Kubernetes screenshots unavailable.
-
-## 11. Remaining manual work
-
-- Second member name, roll number, contribution, and commit.
-- Genuine contribution confirmation and AI declaration confirmation.
-- Docker Desktop/daemon, Ollama models, and live cluster availability.
-- Physical demonstration and final screenshot confirmation.
-
-## 12. Final completion percentage
-
-Measured from requirement areas in `assignment03_audit.json`: 1 complete verified and 15 total remaining as partial, unverified, blocked, or unimplemented. The actual verified completion percentage is 6.7% (1/15), while implemented-but-unverified work must not be counted as complete. This is a conservative result and excludes future work.
+Work is on `feature/ragops-assignment-03-tracing`. The earlier commit `f0794a5`
+was pushed to that feature branch. The current fixes and report updates are
+uncommitted and have not been pushed. The branch is not merged into `main`.

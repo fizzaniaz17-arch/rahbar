@@ -13,8 +13,10 @@ import argparse
 from dataclasses import asdict
 import json
 import os
+import shutil
 import sys
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 from .config import IndexerSettings, get_settings
@@ -77,19 +79,26 @@ def run_pipeline(settings: IndexerSettings) -> int:
         raise SystemExit(f"no documents found in {settings.corpus_dir}")
     all_chunks: list[Chunk] = []
     verification_results = []
-    quarantine_dir = Path(settings.corpus_dir).parent / "quarantine"
+    state_dir = Path(settings.state_dir)
+    quarantine_dir = state_dir / "quarantine"
+    archive_dir = state_dir / "archive"
+    state_dir.mkdir(parents=True, exist_ok=True)
     known_hashes: dict[str, str] = {}
-    manifest = Path(settings.corpus_dir).parent / "document-hashes.json"
+    manifest = state_dir / "document-hashes.json"
     if manifest.exists():
         known_hashes = json.loads(manifest.read_text(encoding="utf-8"))
     for path, doc_version, superseded in documents:
         log("extracting", source=path.name)
+        if superseded:
+            archive_dir.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(path, archive_dir / path.name)
         extracted = extract(str(path), doc_version, superseded)
         result = verify_document(path, extracted, known_hashes=known_hashes)
         verification_results.append(result)
         known_hashes[path.name] = result.sha256
         if result.overall == "FAIL":
             quarantine_dir.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(path, quarantine_dir / path.name)
             (quarantine_dir / f"{path.name}.json").write_text(
                 json.dumps(asdict(result), indent=2), encoding="utf-8"
             )
@@ -101,8 +110,12 @@ def run_pipeline(settings: IndexerSettings) -> int:
         all_chunks.extend(pieces)
 
     manifest.write_text(json.dumps(known_hashes, indent=2), encoding="utf-8")
+    report_dir = state_dir / "verification-reports"
+    report_name = datetime.now(timezone.utc).strftime(
+        "verification-%Y%m%dT%H%M%S.%fZ.json"
+    )
     write_verification_report(
-        Path(settings.corpus_dir).parent / "verification-report.json",
+        report_dir / report_name,
         verification_results,
     )
 
