@@ -30,7 +30,10 @@ class OllamaProvider:
             f"{self.settings.ollama_url.rstrip('/')}/api/chat",
             json={"model": self.settings.llm_model, "messages": messages(question, passages, numbered_citations=True),
                   "format": OllamaAnswer.model_json_schema(), "stream": False,
-                  "options": {"temperature": self.settings.temperature}},
+                  "options": {
+                      "temperature": self.settings.temperature,
+                      "num_predict": self.settings.ollama_num_predict,
+                  }},
             timeout=self.settings.ollama_timeout,
         )
         response.raise_for_status()

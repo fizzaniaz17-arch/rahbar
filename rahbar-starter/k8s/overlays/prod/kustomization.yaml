@@ -5,6 +5,8 @@ resources:
 - ../../base
 - corpus-pvc.yaml
 - model-egress.yaml
+- ollama-models-pvc.yaml
+- ollama-deployment.yaml
 patches:
 - target:
     kind: ConfigMap
@@ -57,3 +59,19 @@ patches:
     - op: add
       path: /spec/jobTemplate/spec/template/spec/volumes/-
       value: {name: corpus, persistentVolumeClaim: {claimName: rahbar-corpus}}
+- target:
+    kind: Deployment
+    name: api
+  patch: |-
+    - op: replace
+      path: /spec/template/spec/containers/0/image
+      value: rahbar-api:evalshort
+    - op: add
+      path: /spec/template/spec/containers/0/env/-
+      value: {name: LLM_MODEL,       value: llama3.2:3b}
+    - op: add
+      path: /spec/template/spec/containers/0/env/-
+      value: {name: OLLAMA_TIMEOUT, value: '180'}
+    - op: add
+      path: /spec/template/spec/containers/0/env/-
+      value: {name: OLLAMA_NUM_PREDICT, value: '128'}

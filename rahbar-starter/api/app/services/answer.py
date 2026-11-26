@@ -53,6 +53,7 @@ def grounded_answer(question: str, passages: list[Passage], provider: LLMProvide
         return abstain()
     allowed = {(p.source, p.section, p.page) for p in passages}
     for attempt in range(2):
+        started = time.perf_counter()
         try:
             answer = provider.generate(question, passages)
             if not answer.answered_from_context:
@@ -63,7 +64,15 @@ def grounded_answer(question: str, passages: list[Passage], provider: LLMProvide
                 return answer
             log.warning("provider returned an ungrounded answer; retrying",
                         extra={"attempt": attempt + 1})
-        except (ValueError, KeyError, TypeError, httpx.HTTPError) as exc:
+        except httpx.TimeoutException as exc:
+            STAGE_LATENCY.labels(stage="generation").observe(time.perf_counter() - started)
+            log.error("provider request timed out: %s", type(exc).__name__)
+            raise HTTPException(status_code=504, detail="generation provider timed out") from exc
+        except httpx.HTTPError as exc:
+            STAGE_LATENCY.labels(stage="generation").observe(time.perf_counter() - started)
+            log.error("provider request failed: %s", type(exc).__name__)
+            raise HTTPException(status_code=502, detail="generation provider unavailable") from exc
+        except (ValueError, KeyError, TypeError) as exc:
             log.warning("provider validation failed; retrying: %s", type(exc).__name__)
     log.warning("provider validation fallback: abstaining")
     return abstain()

@@ -1,3 +1,7 @@
+import httpx
+import pytest
+from fastapi import HTTPException
+
 from app.schemas import Answer, Citation, Passage
 from app.services.cache import never_cache
 from app.services.answer import grounded_answer
@@ -57,6 +61,26 @@ def test_provider_validation_failure_retries_then_abstains_as_fallback() -> None
     assert provider.calls == 2
     assert not answer.answered_from_context
     assert answer.citations == []
+
+
+def test_provider_timeout_is_not_retried_or_converted_to_abstention() -> None:
+    class TimeoutProvider:
+        name = "timeout"
+
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def generate(self, question: str, passages: list[Passage]) -> Answer:
+            self.calls += 1
+            raise httpx.ReadTimeout("model load exceeded provider timeout")
+
+    provider = TimeoutProvider()
+
+    with pytest.raises(HTTPException) as error:
+        grounded_answer("Is attendance required?", [PASSAGE], provider)
+
+    assert error.value.status_code == 504
+    assert provider.calls == 1
 
 
 def test_cache_never_stores_abstentions_or_uncited_answers() -> None:

@@ -49,6 +49,7 @@ class Settings:
     llm_model: str = "llama3.2:3b"
     ollama_url: str = "http://host.minikube.internal:11434"
     ollama_timeout: float = 60.0
+    ollama_num_predict: int = 128
     trace_path: str = field(default_factory=lambda: _DEFAULT_TRACE_PATH)
     hosted_base_url: str = ""        # e.g. an OpenAI-compatible endpoint
     llm_api_key: str = field(default="", repr=False)   # from the Secret; never log it
@@ -74,6 +75,7 @@ def get_settings() -> Settings:
         llm_model=os.environ.get("LLM_MODEL", "llama3.2:3b"),
         ollama_url=os.environ.get("OLLAMA_URL", "http://host.minikube.internal:11434"),
         ollama_timeout=_float("OLLAMA_TIMEOUT", 60.0),
+        ollama_num_predict=_int("OLLAMA_NUM_PREDICT", 128),
         trace_path=os.environ.get("TRACE_PATH") or _DEFAULT_TRACE_PATH,
         hosted_base_url=os.environ.get("HOSTED_BASE_URL", ""),
         llm_api_key=os.environ.get("LLM_API_KEY", ""),

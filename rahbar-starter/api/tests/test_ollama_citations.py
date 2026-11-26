@@ -15,6 +15,7 @@ PASSAGE = Passage(chunk_id="a", text="Attendance is 80 percent.", source="rules.
 def test_ollama_resolves_citations_from_passage_numbers(monkeypatch, number):
     def post(url, **kwargs):
         assert kwargs["json"]["format"]["properties"]["citation_ids"]["type"] == "array"
+        assert kwargs["json"]["options"]["num_predict"] == 128
         response = {"answer": "80 percent", "citation_ids": [number],
                     "answered_from_context": True, "confidence": "high"}
         return httpx.Response(200, request=httpx.Request("POST", url),

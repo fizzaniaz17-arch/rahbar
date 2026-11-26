@@ -35,8 +35,50 @@ collection.
 ## Real corpus and models
 
 The production overlay expects the user-provisioned `rahbar-corpus` PVC to
-contain source documents and `_index.json`. Provision Ollama separately and
-preload both configured models before applying the production overlay:
+contain source documents and `_index.json`. The production overlay declares an
+`ollama-models` PVC and a single-replica Ollama Deployment mounting it at
+`/root/.ollama`. `ollama-deployment.yaml` uses a `Recreate` strategy so two
+Ollama processes never write to the same model store during an update.
+
+To preserve models already downloaded into the current pod, migrate them before
+applying the deployment manifest. Run from `rahbar-starter/` in Bash:
+
+```sh
+kubectl apply -f k8s/overlays/prod/ollama-models-pvc.yaml
+kubectl -n rahbar wait --for=jsonpath='{.status.phase}'=Bound pvc/ollama-models --timeout=2m
+kubectl apply -f k8s/overlays/prod/ollama-model-migrator.yaml
+kubectl -n rahbar wait --for=condition=Ready pod/ollama-model-migrator --timeout=3m
+OLLAMA_POD="$(kubectl -n rahbar get pods -l app=ollama -o jsonpath='{.items[0].metadata.name}')"
+set -o pipefail
+kubectl -n rahbar exec "$OLLAMA_POD" -- tar -C /root/.ollama -cf - models \
+  | kubectl -n rahbar exec -i ollama-model-migrator -- tar -C /root/.ollama -xf -
+kubectl -n rahbar exec ollama-model-migrator -- du -sh /root/.ollama/models
+kubectl -n rahbar delete pod ollama-model-migrator --wait
+kubectl apply -f k8s/overlays/prod/ollama-deployment.yaml
+kubectl -n rahbar rollout status deployment/ollama --timeout=10m
+kubectl -n rahbar exec deployment/ollama -- ollama list
+```
+
+Verify the two models appear in `ollama list` after the rollout. This is the
+important persistence check: the old ephemeral pod has been replaced, but the
+models remain available from the claim. If the copy or verification fails, do
+not apply the deployment manifest; the original Ollama pod is still intact.
+The temporary migrator should be deleted after the copy and before the rollout.
+
+Ollama loads weights into memory on first use; a TCP-ready pod is not
+necessarily inference-ready. The 3B model previously took about four minutes
+to load cold, exceeding the API/evaluator 180-second timeout. Warm it once
+before a timed evaluation, then start the runner promptly (Ollama's default
+keep-alive is five minutes):
+
+```sh
+time kubectl -n rahbar exec deployment/ollama -- \
+  ollama run llama3.2:3b "Reply with only READY."
+kubectl -n rahbar exec deployment/ollama -- ollama ps
+```
+
+After model persistence is established and models are ready, apply the
+production workload and index the corpus:
 
 ```sh
 kubectl apply -k k8s/overlays/prod
@@ -51,6 +93,12 @@ Do not run the real-corpus Job until the embedding model and persistent corpus
 are ready. Ollama must be able to reach its model registry over HTTPS; the
 `allow-ollama-registry-egress` policy permits TCP 443 from Ollama pods while
 the default-deny policy remains in effect for other traffic.
+
+The evaluation runner writes an `incomplete` result file, including the
+failed question, elapsed time, HTTP status/exception, and completed-question
+count, when a request fails. Do not interpret partial metrics as a completed
+26-question evaluation. The API surfaces provider timeouts as HTTP 504 and no
+longer retries an expensive model timeout automatically.
 
 ## Evaluation Job and thresholds
 

@@ -1,0 +1,32 @@
+{
+  "status": "incomplete",
+  "questions": 26,
+  "completed_questions": 6,
+  "failed_question": "q07",
+  "failure": {
+    "type": "HTTPStatusError",
+    "http_status": 504,
+    "request_seconds": 120.35
+  },
+  "total_execution_seconds": 532.01,
+  "golden": "D:\\5th semester\\SCD\\RAHBAR\\rahbar-starter\\eval\\golden.yaml",
+  "golden_sha256": "219d0b402a16468c5e7c395da8190ee1db2b1e2af6390ad1a200a147fff51614",
+  "model": "llama3.2:3b",
+  "partial_metrics": {
+    "by_type": {
+      "ordinary": {
+        "recall@3": 1.0,
+        "recall@5": 1.0
+      }
+    },
+    "recall@3": 1.0,
+    "recall@5": 1.0,
+    "citation_count": 19,
+    "citation_validity": 1.0,
+    "abstention_correctness": null,
+    "mrr@5": 1.0,
+    "ndcg@5": 1.0,
+    "latency_p50_seconds": 70.88,
+    "latency_p95_seconds": 80.97
+  }
+}

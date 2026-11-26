@@ -1,0 +1,225 @@
+{
+  "by_type": {
+    "exact": {
+      "recall@3": 0.6,
+      "recall@5": 0.8
+    },
+    "injection": {
+      "recall@3": 1.0,
+      "recall@5": 1.0
+    },
+    "ordinary": {
+      "recall@3": 0.8333333333333334,
+      "recall@5": 0.9166666666666666
+    },
+    "version": {
+      "recall@3": 0.5,
+      "recall@5": 0.5
+    }
+  },
+  "recall@3": 0.7619047619047619,
+  "recall@5": 0.8571428571428571,
+  "citation_count": 0,
+  "citation_validity": null,
+  "abstention_correctness": 1.0,
+  "mrr@5": 0.6722222222222223,
+  "ndcg@5": 0.7180661367833737,
+  "latency_p50_seconds": 17.18,
+  "latency_p95_seconds": 36.88999999999999,
+  "golden": "D:\\5th semester\\SCD\\RAHBAR\\rahbar-starter\\eval\\golden.yaml",
+  "golden_sha256": "219d0b402a16468c5e7c395da8190ee1db2b1e2af6390ad1a200a147fff51614",
+  "model": "llama3.2:1b",
+  "timestamp_utc": "2026-11-26T21:25:16.119913+00:00",
+  "status": "complete",
+  "total_execution_seconds": 520.77,
+  "gate_thresholds": {
+    "max_recall5_drop": 0.05,
+    "min_citation_validity": 0.95,
+    "required_abstention_correctness": 1.0
+  },
+  "questions": 26,
+  "per_question": [
+    {
+      "id": "q01",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": 1.0
+    },
+    {
+      "id": "q02",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": 1.0
+    },
+    {
+      "id": "q03",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": 1.0
+    },
+    {
+      "id": "q04",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": 1.0
+    },
+    {
+      "id": "q05",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": 1.0
+    },
+    {
+      "id": "q06",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": 1.0
+    },
+    {
+      "id": "q07",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": 1.0
+    },
+    {
+      "id": "q08",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": 1.0
+    },
+    {
+      "id": "q09",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": 1.0
+    },
+    {
+      "id": "q10",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": 0.0
+    },
+    {
+      "id": "q11",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": 1.0
+    },
+    {
+      "id": "q12",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": 1.0
+    },
+    {
+      "id": "q13",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": null
+    },
+    {
+      "id": "q14",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": null
+    },
+    {
+      "id": "q15",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": 1.0
+    },
+    {
+      "id": "q16",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": 1.0
+    },
+    {
+      "id": "q17",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": 1.0
+    },
+    {
+      "id": "q18",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": 1.0
+    },
+    {
+      "id": "q19",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": null
+    },
+    {
+      "id": "q20",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": null
+    },
+    {
+      "id": "q21",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": 1.0
+    },
+    {
+      "id": "q22",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": 1.0
+    },
+    {
+      "id": "q23",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": 0.0
+    },
+    {
+      "id": "q24",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": 0.0
+    },
+    {
+      "id": "q25",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": 1.0
+    },
+    {
+      "id": "q26",
+      "answered_from_context": false,
+      "citation_count": 0,
+      "citation_validity": null,
+      "recall@5": null
+    }
+  ]
+}

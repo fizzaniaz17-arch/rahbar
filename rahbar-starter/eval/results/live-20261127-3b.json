@@ -1,0 +1,16 @@
+{
+  "status": "incomplete",
+  "questions": 26,
+  "completed_questions": 0,
+  "failed_question": "q01",
+  "failure": {
+    "type": "HTTPStatusError",
+    "http_status": 504,
+    "request_seconds": 61.49
+  },
+  "total_execution_seconds": 62.84,
+  "golden": "D:\\5th semester\\SCD\\RAHBAR\\rahbar-starter\\eval\\golden.yaml",
+  "golden_sha256": "219d0b402a16468c5e7c395da8190ee1db2b1e2af6390ad1a200a147fff51614",
+  "model": "llama3.2:3b",
+  "partial_metrics": null
+}
