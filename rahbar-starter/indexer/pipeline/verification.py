@@ -73,9 +73,22 @@ def _completeness_status(
     return "FAIL" if failed else "PASS"
 
 
-def _recency_status(path: Path, recency_days: int | None, reasons: list[str]) -> str:
+def _recency_status(
+    path: Path,
+    recency_days: int | None,
+    reasons: list[str],
+    document_version: str,
+) -> str:
     if recency_days is None:
         return "PASS"
+    version_year = re.match(r"^(20\d{2})(?:[-_/]|$)", document_version.strip())
+    if version_year:
+        age_years = datetime.now(timezone.utc).year - int(version_year.group(1))
+        if age_years * 365 > recency_days:
+            reasons.append(
+                f"document version {document_version} is older than {recency_days} days"
+            )
+            return "FAIL"
     age_seconds = max(
         0.0,
         datetime.now(timezone.utc).timestamp() - path.stat().st_mtime,
@@ -125,7 +138,7 @@ def verify_document(
     normalized_hash = normalized_text_hash(document)
     quality = _quality_status(document, reasons)
     completeness = _completeness_status(document, required_source, reasons)
-    recency = _recency_status(path, recency_days, reasons)
+    recency = _recency_status(path, recency_days, reasons, document.doc_version)
     known_hashes = known_hashes or {}
     same_source = [
         (name, digest)
