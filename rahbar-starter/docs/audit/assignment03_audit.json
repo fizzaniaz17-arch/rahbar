@@ -6,7 +6,7 @@
     "static_checks": "mypy API (26 files) and indexer (11 files) passed; Ruff passed",
     "manifests": "kubectl kustomize dev, prod, and eval rendered successfully; fixture overlay state PVC and corpus patch verified",
     "live_cluster": "Existing rahbar-real-eval profile and PVCs preserved; Ollama model files checksum-verified on the bound 5 Gi ollama-models PVC; API image rahbar-api:evalshort deployed; complete 26-question llama3.2:3b run finished with Recall@5 0.8571 and release gate failure; container peak about 7.73/8 GiB",
-    "branch_state": "Work is on feature/ragops-assignment-03-tracing and is not merged to main"
+    "branch_state": "Work is on feature/ragops-assignment-03-tracing and is not merged to main; local and origin branch state is 3 commits ahead of the merged branch history and 7 commits behind origin/main"
   },
   "requirements": [
     {"id":"A1","status":"PARTIALLY IMPLEMENTED","files":["indexer/pipeline/verification.py","indexer/pipeline/run.py","indexer/pipeline/config.py","indexer/tests/test_pipeline_state.py"],"verification":"Indexer unit tests and mypy passed; verification artifacts now use configured writable state_dir","missing":["Real Batch B execution","complete quality/completeness/recency checks","pipeline-integrated embedding near-duplicate check"]},

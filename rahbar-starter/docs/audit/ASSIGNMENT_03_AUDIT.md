@@ -16,6 +16,7 @@ Overall status: **PARTIAL — do not present as fully complete.**
 | Kustomize | Dev, prod, and eval overlays rendered successfully |
 | Fixture overlay | Indexer state PVC and fixture corpus patch present; candidate and evaluation workloads remain opt-in |
 | Diff hygiene | `git diff --check` passed |
+| Branch state | 3 commits ahead of the merged branch history and 7 commits behind `origin/main`; not merged or force-pushed |
 
 The API prompt/runtime changes were built as `rahbar-api:evalshort` and deployed
 to the retained cluster. The entire production overlay was not applied as a
