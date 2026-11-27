@@ -318,3 +318,76 @@ questions:
   relevant: []
   expect: Abstain. The hostel form number and deadline are not covered by the indexed sources.
   must_abstain: true
+- id: q27
+  origin: synthetic
+  difficulty: medium
+  manual_review: true
+  synthetic_review: true
+  type: ordinary
+  question: What result follows a CGPA of 2.00 after an academic warning?
+  relevant:
+  - source: academic-rules-handbook-jun-2026.pdf
+    section: 5. Academic Assessment 5.7 If the CGPA equals or exceeds 2.00 after the
+      1st or 2nd
+    page: 25
+  expect: The academic warning count resets to zero.
+- id: q28
+  origin: human
+  difficulty: medium
+  manual_review: true
+  synthetic_review: false
+  type: ordinary
+  question: Which section of the summer rules limits course registration to two?
+  relevant:
+  - source: academic-rules-handbook-jun-2026.pdf
+    section: 6.6 A student will be allowed to repeat a maximum of 2 courses
+    page: 28
+  expect: Summer rule 6.6 allows a maximum of two repeat courses.
+- id: q29
+  origin: synthetic
+  difficulty: difficult
+  manual_review: true
+  synthetic_review: true
+  type: exact
+  question: Compare the 100 percent attendance rule with the allowed HoD exception.
+  relevant:
+  - source: academic-rules-handbook-jun-2026.pdf
+    section: 1.21 Students are required to maintain 100% attendance in
+    page: 10
+  expect: 100 percent is required, and the HoD may excuse genuine absences up to 20 percent.
+- id: q30
+  origin: human
+  difficulty: easy
+  manual_review: true
+  synthetic_review: false
+  type: ordinary
+  question: What grade point value appears for B+ in the grading table?
+  relevant:
+  - source: grading-page.html
+    section: Letter Code Interpretation
+    page: 1
+  expect: B+ is worth 3.33 grade points.
+- id: q31
+  origin: synthetic
+  difficulty: difficult
+  manual_review: true
+  synthetic_review: true
+  type: ordinary
+  question: What role can a faculty member's startup involvement include besides founding or managing?
+  relevant:
+  - source: faculty-entrepreneurship-and-technical-start-ups-policy.pdf
+    section: 1. Purpose
+    page: 1
+  expect: Significant equity, governing-board service, or revenue share.
+- id: q32
+  origin: human
+  difficulty: medium
+  manual_review: true
+  synthetic_review: false
+  type: ordinary
+  question: May students rely solely on generative AI for preparatory research?
+  relevant:
+  - source: student-handbook-jun-2026.pdf
+    section: 4. Acceptable Uses of Generative AI Tools
+    page: 50
+  expect: No. Generative AI may assist preparation but cannot be the sole information source.

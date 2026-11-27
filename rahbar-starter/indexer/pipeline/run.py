@@ -84,23 +84,58 @@ def run_pipeline(settings: IndexerSettings) -> int:
     archive_dir = state_dir / "archive"
     state_dir.mkdir(parents=True, exist_ok=True)
     known_hashes: dict[str, str] = {}
+    normalized_hashes: set[str] = set()
+    near_vectors: list[list[float]] = []
     manifest = state_dir / "document-hashes.json"
     if manifest.exists():
-        known_hashes = json.loads(manifest.read_text(encoding="utf-8"))
+        manifest_data = json.loads(manifest.read_text(encoding="utf-8"))
+        if "document_hashes" in manifest_data:
+            known_hashes = manifest_data["document_hashes"]
+            normalized_hashes = set(manifest_data.get("normalized_hashes", []))
+            near_vectors = manifest_data.get("near_vectors", [])
+        else:
+            known_hashes = manifest_data
     for path, doc_version, superseded in documents:
         log("extracting", source=path.name)
         if superseded:
             archive_dir.mkdir(parents=True, exist_ok=True)
             shutil.copy2(path, archive_dir / path.name)
+            log("document archived", source=path.name)
+            continue
         extracted = extract(str(path), doc_version, superseded)
-        result = verify_document(path, extracted, known_hashes=known_hashes)
+        text = "\n".join(page.text for page in extracted.pages)
+        document_vector = embed([text], settings)[0] if text.strip() else None
+        result = verify_document(
+            path,
+            extracted,
+            known_hashes=known_hashes,
+            near_vectors=near_vectors,
+            vector=document_vector,
+            normalized_hashes=normalized_hashes,
+            near_duplicate_threshold=settings.near_duplicate_threshold,
+            recency_days=settings.recency_days,
+        )
         verification_results.append(result)
         known_hashes[path.name] = result.sha256
+        normalized_hashes.add(result.normalized_sha256)
+        if document_vector is not None:
+            near_vectors.append(document_vector)
         if result.overall == "FAIL":
             quarantine_dir.mkdir(parents=True, exist_ok=True)
             shutil.copy2(path, quarantine_dir / path.name)
+            quarantined_at = datetime.now(timezone.utc).isoformat()
             (quarantine_dir / f"{path.name}.json").write_text(
-                json.dumps(asdict(result), indent=2), encoding="utf-8"
+                json.dumps({
+                    "document_id": path.name,
+                    "quarantined_at": quarantined_at,
+                    "document_version": doc_version,
+                    "original_metadata": {
+                        "superseded": superseded,
+                        "source": path.name,
+                    },
+                    **asdict(result),
+                }, indent=2),
+                encoding="utf-8",
             )
             log("document quarantined", source=path.name, reasons=result.reasons)
             continue
@@ -109,7 +144,11 @@ def run_pipeline(settings: IndexerSettings) -> int:
         log("chunked", source=path.name, chunks=len(pieces))
         all_chunks.extend(pieces)
 
-    manifest.write_text(json.dumps(known_hashes, indent=2), encoding="utf-8")
+    manifest.write_text(json.dumps({
+        "document_hashes": known_hashes,
+        "normalized_hashes": sorted(normalized_hashes),
+        "near_vectors": near_vectors,
+    }, indent=2), encoding="utf-8")
     report_dir = state_dir / "verification-reports"
     report_name = datetime.now(timezone.utc).strftime(
         "verification-%Y%m%dT%H%M%S.%fZ.json"
@@ -133,11 +172,38 @@ def run_pipeline(settings: IndexerSettings) -> int:
     return store(all_chunks, vectors, settings)
 
 
+def restore_document(state_dir: str, document_id: str, destination: str) -> Path:
+    archive = Path(state_dir) / "archive" / document_id
+    if not archive.is_file():
+        raise FileNotFoundError(f"archived document not found: {document_id}")
+    target = Path(destination) / document_id
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(archive, target)
+    record = Path(state_dir) / "restore-records.jsonl"
+    record.parent.mkdir(parents=True, exist_ok=True)
+    entry = {
+        "document_id": document_id,
+        "restored_at": datetime.now(timezone.utc).isoformat(),
+        "destination": str(target),
+    }
+    with record.open("a", encoding="utf-8") as stream:
+        stream.write(json.dumps(entry) + "\n")
+    return target
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Build the RAHBAR index, then exit.")
     parser.add_argument("--dummy", action="store_true", help="write three fake chunks")
+    parser.add_argument("--restore", metavar="DOCUMENT_ID",
+                        help="restore an archived document to --restore-to")
+    parser.add_argument("--restore-to", default="/tmp/rahbar-restored",
+                        help="destination directory for --restore")
     args = parser.parse_args()
     settings = get_settings()
+    if args.restore:
+        restored = restore_document(settings.state_dir, args.restore, args.restore_to)
+        log("document restored", source=args.restore, destination=str(restored))
+        return 0
     log("indexer starting", dummy=args.dummy, embed_model=settings.embed_model,
         collection=settings.collection, chroma=f"{settings.chroma_host}:{settings.chroma_port}",
         pod=os.environ.get("HOSTNAME", "-"))

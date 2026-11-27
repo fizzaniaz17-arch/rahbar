@@ -1,0 +1,14 @@
+{
+  "timestamp_utc": "2026-11-27T12:39:29.598203+00:00",
+  "embedding_model": "nomic-embed-text",
+  "pairs_sha256": "936ab5e4dd2217dd49cfb03ffc56e96a9ee2c9f3f15d0a562c57c4bf04a56646",
+  "paraphrase_pair_count": 15,
+  "unrelated_pair_count": 15,
+  "paraphrase_mean_similarity": 0.7882660333675108,
+  "unrelated_mean_similarity": 0.3727606221587548,
+  "similarity_gap": 0.415505411208756,
+  "noise_mean_similarity": 0.8447269701331892,
+  "determinism_mean_similarity": 1.0,
+  "noise_pass": false,
+  "determinism_pass": true
+}

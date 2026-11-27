@@ -35,6 +35,7 @@ def build_trace(
     provider_name: str,
     cache_hit: bool,
     stage_seconds: dict[str, float],
+    total_seconds: float | None = None,
 ) -> dict[str, Any]:
     prompt = (
         messages(question, evidence, numbered_citations=provider_name == "ollama")
@@ -77,8 +78,12 @@ def build_trace(
             for passage in passages
         ],
         "filters": {"superseded": False} if settings.retriever == "chroma" else {},
-        "reranker": "none",
+        "reranker": "lexical_overlap" if settings.retriever == "chroma" else "none",
         "reranked_order": [passage.chunk_id for passage in passages],
+        "retrieval_parameters": {
+            "top_k": settings.top_k,
+            "relevance_floor": settings.relevance_floor,
+        },
         "prompt": prompt,
         "prompt_sha256": (
             hashlib.sha256(serialized_prompt.encode("utf-8")).hexdigest()
@@ -89,6 +94,8 @@ def build_trace(
             "provider": provider_name,
             "model": settings.llm_model,
             "temperature": settings.temperature,
+            "timeout_seconds": settings.ollama_timeout,
+            "num_predict": settings.ollama_num_predict,
         },
         "response": answer.model_dump(mode="json"),
         "citations": [citation.model_dump(mode="json") for citation in answer.citations],
@@ -97,6 +104,7 @@ def build_trace(
             "action": "treat_as_untrusted_data" if injection_detected else "none",
         },
         "stage_seconds": stage_seconds,
+        "total_seconds": total_seconds,
         "cache_hit": cache_hit,
     }
 

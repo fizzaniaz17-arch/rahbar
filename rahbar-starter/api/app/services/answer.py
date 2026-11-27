@@ -104,6 +104,7 @@ def _record_retrieval_failure(
         provider_name=provider.name,
         cache_hit=False,
         stage_seconds={"retrieval": elapsed},
+        total_seconds=elapsed,
     )
     failed_trace["error_type"] = type(error).__name__
     try:
@@ -213,6 +214,7 @@ def answer_question(
         provider_name=provider.name,
         cache_hit=cached,
         stage_seconds=stage_seconds,
+        total_seconds=time.perf_counter() - started,
     )
     if trace["guardrails"]["injection_detected"]:
         INJECTION_ATTEMPTS.inc()

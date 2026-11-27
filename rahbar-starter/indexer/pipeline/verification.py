@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
+import unicodedata
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Iterable
@@ -22,10 +24,18 @@ class VerificationResult:
     uniqueness: str
     overall: str
     reasons: list[str]
+    normalized_sha256: str
 
 
 def document_hash(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def normalized_text_hash(document: Document) -> str:
+    text = _text(document).strip().casefold()
+    text = unicodedata.normalize("NFKC", text)
+    text = re.sub(r"\s+", " ", text)
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
 def _text(document: Document) -> str:
@@ -39,10 +49,15 @@ def verify_document(
     known_hashes: dict[str, str] | None = None,
     near_vectors: Iterable[list[float]] | None = None,
     vector: list[float] | None = None,
+    near_duplicate_threshold: float = 0.98,
+    required_source: bool = True,
+    recency_days: int | None = None,
+    normalized_hashes: Iterable[str] | None = None,
 ) -> VerificationResult:
     """Run quality, completeness, recency, and uniqueness checks before chunking."""
     reasons: list[str] = []
     raw_hash = document_hash(path)
+    normalized_hash = normalized_text_hash(document)
     text = _text(document).strip()
     quality = "PASS"
     if not text:
@@ -56,7 +71,7 @@ def verify_document(
         reasons.append("replacement characters indicate corrupt text")
 
     completeness = "PASS"
-    if not document.source:
+    if required_source and not document.source:
         completeness = "FAIL"
         reasons.append("missing source")
     if not document.doc_version or document.doc_version == "unknown":
@@ -67,6 +82,13 @@ def verify_document(
         reasons.append("missing page count")
 
     recency = "PASS"
+    if recency_days is not None:
+        from datetime import datetime, timezone
+
+        age_seconds = max(0.0, (datetime.now(timezone.utc).timestamp() - path.stat().st_mtime))
+        if age_seconds > recency_days * 86400:
+            recency = "FAIL"
+            reasons.append(f"document is older than {recency_days} days")
     known_hashes = known_hashes or {}
     same_source = [
         (name, digest)
@@ -83,6 +105,9 @@ def verify_document(
     if raw_hash in exact_hashes:
         uniqueness = "FAIL"
         reasons.append("exact duplicate document")
+    if normalized_hash in set(normalized_hashes or []):
+        uniqueness = "FAIL"
+        reasons.append("normalized exact duplicate document")
     if vector is not None and near_vectors is not None:
         norm = sum(value * value for value in vector) ** 0.5
         if norm:
@@ -90,7 +115,7 @@ def verify_document(
                 candidate_norm = sum(value * value for value in candidate) ** 0.5
                 if candidate_norm:
                     similarity = sum(a * b for a, b in zip(vector, candidate, strict=True)) / (norm * candidate_norm)
-                    if similarity >= 0.98:
+                    if similarity >= near_duplicate_threshold:
                         uniqueness = "FAIL"
                         reasons.append("near duplicate document")
                         break
@@ -106,6 +131,7 @@ def verify_document(
         uniqueness=uniqueness,
         overall=overall,
         reasons=reasons,
+        normalized_sha256=normalized_hash,
     )
 
 
