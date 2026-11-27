@@ -99,7 +99,7 @@ existing screenshots are preserved.
 
 ## Local verification
 
-The latest local checks passed: API 24 tests, indexer 10 tests, evaluation 20
+The latest local checks passed: API 24 tests, indexer 15 tests, evaluation 21
 tests, mypy for API and indexer, Ruff across API/indexer/eval/corpus, and
 Kustomize rendering for dev, prod, and eval. The eval overlay was checked for
 its writable indexer-state PVC and fixture corpus mount and for keeping
@@ -110,23 +110,25 @@ schema validation or live deployment verification.
 
 **PARTIAL:** Incremental embedding reuse has unit coverage, but needs a Chroma
 integration run proving unchanged documents make zero embedding requests and
-that changed/deleted documents reconcile safely. Live trace content and stage
-metrics were inspected, but traces are not persistent across API pod
-replacement. The 26-question 3B run completed but failed its recall@5 gate and
-the qualitative faithfulness review found answer defects. No embedding-model
-evaluation, noise test, stochasticity pair, 25-question golden set,
-model-backed 44-query coverage run, or candidate comparison has been completed.
+that changed/deleted documents reconcile safely. Persistent live trace storage
+and post-rollout reconstruction were verified for trace
+`d9fd7288acc8412e86c914401bf8c422`; candidate trace reconstruction and reranker
+fields in the deployed image remain unverified. The 26-question 3B run completed
+but failed its recall@5 gate and the qualitative faithfulness review found
+answer defects. Real embedding and 44-query coverage experiments were completed:
+the embedding gap was 0.4155 and coverage remained 34.09% before and after the
+six-question golden expansion. Candidate comparison remains absent.
 
 **BLOCKED:** The release gate remains failed because recall@5 is below the
 configured threshold. The 3B runtime is CPU-intensive and approached the
 profile's 8 GiB cap; do not raise resource limits or rerun large evaluations
 without checking cluster health and obtaining approval.
 
-**NOT IMPLEMENTED / NOT VERIFIED:** Four-category document verification,
-quarantine and version restoration; drift monitoring; a Kubernetes evaluation
-Job with candidate/live promotion and rollback; a fresh-cluster run; the
-eight-page submission PDF; and a new screenshot appendix. The existing
-production overlay does not itself implement candidate promotion.
+**NOT IMPLEMENTED / NOT VERIFIED:** Live real-Chroma Batch A/B ingestion and
+changed/unchanged/deleted reconciliation; drift monitoring and coverage
+improvement; a successful candidate/live promotion and rollback proof; a
+fresh-cluster run; the eight-page submission PDF; and a new screenshot appendix.
+The existing production overlay does not itself implement candidate promotion.
 
 The second group member must supply their name and roll number, review the
 implementation, make their own genuine contribution and commit, and confirm

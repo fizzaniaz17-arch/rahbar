@@ -31,8 +31,8 @@ unverified or incomplete.
 ## Verification
 
 - API tests: 24 passed.
-- Indexer tests: 10 passed.
-- Evaluation tests: 20 passed.
+- Indexer tests: 15 passed.
+- Evaluation tests: 21 passed.
 - mypy: API (26 source files) and indexer (11 source files) passed.
 - Ruff passed for API, indexer, eval, and corpus.
 - Kustomize rendering passed for dev, prod, and eval overlays. The eval overlay
@@ -87,6 +87,12 @@ from the later complete-but-gate-failing 26-question 3B run.
 
 ## Remaining work and blockers
 
+- Complete real-Chroma Batch A/B ingestion and live unchanged/changed/deleted
+  reconciliation; the current evidence is unit/pipeline-fixture verified.
+- Complete candidate/live indexing, evaluation, promotion, and rollback proof.
+- Improve retrieval and answer quality, then rerun the model-backed evaluation
+  only after checking resource headroom. The current complete run fails its
+  recall@5 gate.
 - Improve retrieval and answer quality, then rerun the model-backed evaluation
   only after checking resource headroom. The current complete run fails its
   recall@5 gate.
