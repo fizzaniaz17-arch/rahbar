@@ -66,11 +66,11 @@ def grounded_answer(question: str, passages: list[Passage], provider: LLMProvide
                         extra={"attempt": attempt + 1})
         except httpx.TimeoutException as exc:
             STAGE_LATENCY.labels(stage="generation").observe(time.perf_counter() - started)
-            log.error("provider request timed out: %s", type(exc).__name__)
+            log.exception("provider request timed out")
             raise HTTPException(status_code=504, detail="generation provider timed out") from exc
         except httpx.HTTPError as exc:
             STAGE_LATENCY.labels(stage="generation").observe(time.perf_counter() - started)
-            log.error("provider request failed: %s", type(exc).__name__)
+            log.exception("provider request failed")
             raise HTTPException(status_code=502, detail="generation provider unavailable") from exc
         except (ValueError, KeyError, TypeError) as exc:
             log.warning("provider validation failed; retrying: %s", type(exc).__name__)

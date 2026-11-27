@@ -196,7 +196,7 @@ def main() -> int:
     parser.add_argument("--dummy", action="store_true", help="write three fake chunks")
     parser.add_argument("--restore", metavar="DOCUMENT_ID",
                         help="restore an archived document to --restore-to")
-    parser.add_argument("--restore-to", default="/tmp/rahbar-restored",
+    parser.add_argument("--restore-to", default="/var/lib/rahbar/restored",
                         help="destination directory for --restore")
     args = parser.parse_args()
     settings = get_settings()

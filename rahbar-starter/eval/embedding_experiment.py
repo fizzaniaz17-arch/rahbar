@@ -52,7 +52,7 @@ def main() -> int:
         right = vectors[offset + 1]
         paraphrase_scores.append(cosine(left, right))
         offset += 2
-    for pair in unrelated:
+    for _pair in unrelated:
         left = vectors[offset]
         right = vectors[offset + 1]
         unrelated_scores.append(cosine(left, right))

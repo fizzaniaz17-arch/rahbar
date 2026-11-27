@@ -1,7 +1,10 @@
 FROM python:3.12.11-slim
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
 WORKDIR /app
-RUN pip install --no-cache-dir httpx==0.28.1 PyYAML==6.0.2
-COPY . ./eval
+RUN pip install --no-cache-dir --only-binary=:all: httpx==0.28.1 PyYAML==6.0.2
+COPY run_eval.py ./eval/run_eval.py
+COPY baseline.json ./eval/baseline.json
+COPY gate.yaml ./eval/gate.yaml
+COPY golden.yaml ./eval/golden.yaml
 USER 10001:10001
 ENTRYPOINT ["python", "-m", "eval.run_eval"]
