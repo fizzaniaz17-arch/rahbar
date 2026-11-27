@@ -27,6 +27,11 @@ spec:
       - name: ollama
         image: ollama/ollama:0.9.6
         imagePullPolicy: IfNotPresent
+        env:
+        - name: HOME
+          value: /tmp
+        - name: OLLAMA_MODELS
+          value: /models/models
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
@@ -53,7 +58,7 @@ spec:
           failureThreshold: 3
         volumeMounts:
         - name: models
-          mountPath: /root/.ollama
+          mountPath: /models
         - name: tmp
           mountPath: /tmp
       volumes:

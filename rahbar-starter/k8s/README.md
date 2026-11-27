@@ -37,8 +37,9 @@ collection.
 The production overlay expects the user-provisioned `rahbar-corpus` PVC to
 contain source documents and `_index.json`. The production overlay declares an
 `ollama-models` PVC and a single-replica Ollama Deployment mounting it at
-`/root/.ollama`. `ollama-deployment.yaml` uses a `Recreate` strategy so two
-Ollama processes never write to the same model store during an update.
+`/models` with `OLLAMA_MODELS=/models/models`. `ollama-deployment.yaml` uses a
+`Recreate` strategy so two Ollama processes never write to the same model store
+during an update.
 
 To preserve models already downloaded into the current pod, migrate them before
 applying the deployment manifest. Run from `rahbar-starter/` in Bash:

@@ -134,7 +134,8 @@ jobs:
             --from-file=eval/fixtures/academic-rules-2023.md \
             --from-file=eval/fixtures/academic-rules-2026.md \
             --from-file=eval/fixtures/fees-2026.md
-          kubectl -n rahbar create deployment ollama --image=ollama/ollama:0.9.6
+          kubectl apply -f k8s/overlays/prod/ollama-models-pvc.yaml
+          kubectl apply -f k8s/overlays/prod/ollama-deployment.yaml
           kubectl -n rahbar expose deployment ollama --port=11434
           kubectl -n rahbar rollout status deployment/ollama --timeout=5m
           pull_with_retry() {
