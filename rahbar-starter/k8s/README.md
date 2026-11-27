@@ -117,6 +117,18 @@ The Job writes its timestamped evaluation output to the
 to test a different threshold without rebuilding the image. Preserve old Job
 logs by using a unique Job name for each run.
 
+If a run exceeds the default 15-minute deadline, preserve that Job and create
+the separately named retry Job. It allows up to 60 minutes and gives each API
+request 210 seconds (the API's model timeout is 180 seconds). Monitor the
+terminal Job state rather than waiting only for `Complete`: a fully computed
+evaluation can still exit non-zero when its release gate fails.
+
+```sh
+kubectl -n rahbar apply -f k8s/base/evaluation-job-retry.yaml
+kubectl -n rahbar get job evaluation-retry --watch
+kubectl -n rahbar logs job/evaluation-retry --all-containers=true --tail=200
+```
+
 The candidate Deployment and Service use the `rahbar-candidate` collection.
 The current repository does not yet provide a candidate-specific indexer,
 promotion controller, or a verified release/rollback workflow. Do not send

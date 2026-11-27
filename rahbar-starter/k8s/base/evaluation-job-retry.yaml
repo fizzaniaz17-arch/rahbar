@@ -1,0 +1,70 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: evaluation-retry
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 3600
+  template:
+    metadata:
+      labels:
+        app: evaluation
+    spec:
+      serviceAccountName: api
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: evaluation
+        image: rahbar-evaluation:dev
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        command:
+        - sh
+        - -ec
+        args:
+        - >-
+          exec python -m eval.run_eval --api http://api:8000
+          --golden /app/eval/golden.yaml
+          --gate-config /app/eval/runtime-config/gate.yaml
+          --timeout 210
+          --out "/app/eval/results/evaluation-retry-$(date -u +%Y%m%dT%H%M%SZ).json"
+        envFrom:
+        - configMapRef:
+            name: rahbar-config
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+            ephemeral-storage: 128Mi
+          limits:
+            cpu: '1'
+            memory: 512Mi
+            ephemeral-storage: 512Mi
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: release-gate
+          mountPath: /app/eval/runtime-config
+          readOnly: true
+        - name: results
+          mountPath: /app/eval/results
+      restartPolicy: Never
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: release-gate
+        configMap:
+          name: rahbar-release-gate
+      - name: results
+        persistentVolumeClaim:
+          claimName: rahbar-evaluation-results
