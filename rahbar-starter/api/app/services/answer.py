@@ -53,6 +53,7 @@ def grounded_answer(question: str, passages: list[Passage], provider: LLMProvide
         return abstain()
     allowed = {(p.source, p.section, p.page) for p in passages}
     for attempt in range(2):
+        started = time.perf_counter()
         try:
             answer = provider.generate(question, passages)
             if not answer.answered_from_context:
@@ -63,7 +64,15 @@ def grounded_answer(question: str, passages: list[Passage], provider: LLMProvide
                 return answer
             log.warning("provider returned an ungrounded answer; retrying",
                         extra={"attempt": attempt + 1})
-        except (ValueError, KeyError, TypeError, httpx.HTTPError) as exc:
+        except httpx.TimeoutException as exc:
+            STAGE_LATENCY.labels(stage="generation").observe(time.perf_counter() - started)
+            log.exception("provider request timed out")
+            raise HTTPException(status_code=504, detail="generation provider timed out") from exc
+        except httpx.HTTPError as exc:
+            STAGE_LATENCY.labels(stage="generation").observe(time.perf_counter() - started)
+            log.exception("provider request failed")
+            raise HTTPException(status_code=502, detail="generation provider unavailable") from exc
+        except (ValueError, KeyError, TypeError) as exc:
             log.warning("provider validation failed; retrying: %s", type(exc).__name__)
     log.warning("provider validation fallback: abstaining")
     return abstain()
@@ -95,6 +104,7 @@ def _record_retrieval_failure(
         provider_name=provider.name,
         cache_hit=False,
         stage_seconds={"retrieval": elapsed},
+        total_seconds=elapsed,
     )
     failed_trace["error_type"] = type(error).__name__
     try:
@@ -204,6 +214,7 @@ def answer_question(
         provider_name=provider.name,
         cache_hit=cached,
         stage_seconds=stage_seconds,
+        total_seconds=time.perf_counter() - started,
     )
     if trace["guardrails"]["injection_detected"]:
         INJECTION_ATTEMPTS.inc()

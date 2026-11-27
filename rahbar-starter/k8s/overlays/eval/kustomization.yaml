@@ -22,7 +22,7 @@ patches:
     name: indexer
   patch: |-
     - op: replace
-      path: /spec/template/spec/volumes/1
+      path: /spec/template/spec/volumes/2
       value: {name: corpus, configMap: {name: fixture-corpus}}
 - target:
     kind: CronJob
@@ -31,3 +31,10 @@ patches:
     - op: add
       path: /spec/suspend
       value: true
+- target:
+    kind: Deployment
+    name: api
+  patch: |-
+    - op: replace
+      path: /spec/template/spec/containers/0/image
+      value: rahbar-api:dev

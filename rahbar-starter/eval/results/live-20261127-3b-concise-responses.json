@@ -1,0 +1,457 @@
+[
+  {
+    "id": "q01",
+    "type": "ordinary",
+    "must_abstain": false,
+    "relevant": [
+      {
+        "source": "academic-rules-handbook-jun-2026.pdf",
+        "section": "1.22 Failure to meet attendance requirements in a course will",
+        "page": 10
+      }
+    ],
+    "expect": "You cannot sit the final exam for that course and receive an F/A grade.",
+    "response": {
+      "request_id": "e22f5d09439f44b78c38ac60650230ff",
+      "answer": "Failure to meet attendance requirements renders the student ineligible for the final examination and assigns an F/A grade.",
+      "citations": [
+        {
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "1.22 Failure to meet attendance requirements in a course will",
+          "page": 10
+        },
+        {
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "1.22 Failure to meet attendance requirements in a course will",
+          "page": 11
+        },
+        {
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "1.24 When a student is readmitted with credit exemptions from a B+, B, B- Good",
+          "page": 11
+        },
+        {
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "1.21 Students are required to maintain 100% attendance in",
+          "page": 10
+        }
+      ],
+      "answered_from_context": true,
+      "confidence": "high",
+      "retrieved": [
+        {
+          "chunk_id": "60444db698f2e6b84de4938affd414ba9a27e84ab13d37eb09b7ffdd709cab35",
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "1.22 Failure to meet attendance requirements in a course will",
+          "page": 10,
+          "score": 0.82114351
+        },
+        {
+          "chunk_id": "a95273987507076b4a14844b569d1a40993c2ed90be15f20dba684eea69f0afc",
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "1.21 Students are required to maintain 100% attendance in",
+          "page": 10,
+          "score": 0.7470352
+        },
+        {
+          "chunk_id": "0434df7ee9146268ac0d5fe1ac9af52f5892aa208d01a87db0b9e6b5951825a8",
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "1.24 When a student is readmitted with credit exemptions from a B+, B, B- Good",
+          "page": 11,
+          "score": 0.72371846
+        },
+        {
+          "chunk_id": "1ea63a9600ca81f2410e7029cf8212b379b4897fb1c074cc00d01ea771c08b29",
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "1.21 Students are required to maintain 100% attendance in",
+          "page": 11,
+          "score": 0.71697962
+        },
+        {
+          "chunk_id": "46a8f7d96143449ac685658722e0942dcd12981a721a4d19fee610dff9d0fdcb",
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "1.22 Failure to meet attendance requirements in a course will",
+          "page": 11,
+          "score": 0.7116726600000001
+        }
+      ],
+      "provider": "ollama"
+    },
+    "seconds": 72.26
+  },
+  {
+    "id": "q02",
+    "type": "ordinary",
+    "must_abstain": false,
+    "relevant": [
+      {
+        "source": "academic-rules-handbook-jun-2026.pdf",
+        "section": "1.23 The minimum duration of a Bachelor\u2019s degree is four",
+        "page": 10
+      }
+    ],
+    "expect": "The minimum is four academic years and the maximum is six years. Statutory Bodies can approve one extra year.",
+    "response": {
+      "request_id": "d6276b5f272c43c985d857a6a9d0e6c1",
+      "answer": "The minimum duration of a Bachelor's degree is four academic years (8 regular semesters), with a maximum time limit of 6 years.",
+      "citations": [
+        {
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "1.23 The minimum duration of a Bachelor\u2019s degree is four",
+          "page": 10
+        },
+        {
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "1.23 The minimum duration of a Bachelor\u2019s degree is four",
+          "page": 11
+        }
+      ],
+      "answered_from_context": true,
+      "confidence": "high",
+      "retrieved": [
+        {
+          "chunk_id": "dc7094f0b794465790f2724b7b26e38f6519f3ebfd250f1f5548fdf56caf0649",
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "1.23 The minimum duration of a Bachelor\u2019s degree is four",
+          "page": 10,
+          "score": 0.8533145799999999
+        },
+        {
+          "chunk_id": "efd700221da18062ee4a14c15b0491a55ccda39264e8696da75b79e02aa08126",
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "1.23 The minimum duration of a Bachelor\u2019s degree is four",
+          "page": 11,
+          "score": 0.8114804
+        },
+        {
+          "chunk_id": "ae15223ad585f47e217958ac379eccecab7521a8679a86cda36983fad666a62b",
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "3.24 Request of a student for transfer from one campus of the",
+          "page": 17,
+          "score": 0.69735897
+        },
+        {
+          "chunk_id": "8158f761f81f27fcbe0af8737b211083414834672e1c466302d1b3570584c1b2",
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "1.24 When a student is readmitted with credit exemptions from a",
+          "page": 10,
+          "score": 0.6946330700000001
+        },
+        {
+          "chunk_id": "280662386565863900211e26b5bb02769fa9d8eb8c5637de00b281d86a452f69",
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "4. Registration",
+          "page": 19,
+          "score": 0.65365052
+        }
+      ],
+      "provider": "ollama"
+    },
+    "seconds": 59.7
+  },
+  {
+    "id": "q03",
+    "type": "ordinary",
+    "must_abstain": false,
+    "relevant": [
+      {
+        "source": "academic-rules-handbook-jun-2026.pdf",
+        "section": "4.23 Application for withdrawal from a course must be",
+        "page": 22
+      }
+    ],
+    "expect": "A parent or guardian countersigns and the Head of Department approves.",
+    "response": {
+      "request_id": "ee9f464b275441d08b7187c1f3dd3e7f",
+      "answer": "The parent or guardian of the student and the HoD need to sign and approve the request.",
+      "citations": [
+        {
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "4.23 Application for withdrawal from a course must be",
+          "page": 22
+        },
+        {
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "4.23 Application for withdrawal from a course must be",
+          "page": 23
+        }
+      ],
+      "answered_from_context": true,
+      "confidence": "high",
+      "retrieved": [
+        {
+          "chunk_id": "30547d04543d11617d2568dfeb74dc5721ecffb5b401a73f29872180a7906ed6",
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "4.23 Application for withdrawal from a course must be",
+          "page": 22,
+          "score": 0.8389977200000001
+        },
+        {
+          "chunk_id": "30f22e714c1ba465f0e6e6fcfdae24d8991e91026af367f76439d6d00c077e55",
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "4.23 Application for withdrawal from a course must be",
+          "page": 23,
+          "score": 0.8389977200000001
+        },
+        {
+          "chunk_id": "ebe9cff7d92b153dfec757663fce7cd211bbc5c14daf07530de41b61ead41005",
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "4.24 Students are not allowed to withdraw from any course in the",
+          "page": 23,
+          "score": 0.7513076
+        },
+        {
+          "chunk_id": "ebdf0983bfa4e19bd4d43409fb9fc4487053bd78e62a097953aeaf618c0daf91",
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "4.24 Students are not allowed to withdraw from any course in the",
+          "page": 22,
+          "score": 0.7487836
+        },
+        {
+          "chunk_id": "dcb384081b5a34a9caeaa325f85b00628bde0a8b77d8435d737d399f55fde3be",
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "3.33 A student can request closure of his/her admission to pursue",
+          "page": 18,
+          "score": 0.7221502
+        }
+      ],
+      "provider": "ollama"
+    },
+    "seconds": 49.43
+  },
+  {
+    "id": "q04",
+    "type": "ordinary",
+    "must_abstain": false,
+    "relevant": [
+      {
+        "source": "academic-rules-handbook-jun-2026.pdf",
+        "section": "5. Academic Assessment 5.7 If the CGPA equals or exceeds 2.00 after the 1st or 2nd",
+        "page": 25
+      }
+    ],
+    "expect": "It resets to zero once the CGPA reaches at least 2.00.",
+    "response": {
+      "request_id": "3146e7346dbb4339ab813e1d28e35bd5",
+      "answer": "The undergraduate academic warning count is reset to zero if the CGPA equals or exceeds 2.00 after the 1st or 2nd academic warning.",
+      "citations": [
+        {
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "5. Academic Assessment 5.7 If the CGPA equals or exceeds 2.00 after the 1st or 2nd",
+          "page": 25
+        }
+      ],
+      "answered_from_context": true,
+      "confidence": "high",
+      "retrieved": [
+        {
+          "chunk_id": "384acbe7612005ce9d2467e55789a23823cd88c08b879d865204a40b92423b3c",
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "5. Academic Assessment 5.7 If the CGPA equals or exceeds 2.00 after the 1st or 2nd",
+          "page": 25,
+          "score": 0.83309358
+        },
+        {
+          "chunk_id": "05c2ae267012de24145edfb6898985712a48de65a20f512477fa1e3d18f2399d",
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "5.6 If CGPA remains below 2.00 for 3 consecutive semesters,",
+          "page": 24,
+          "score": 0.7645756
+        },
+        {
+          "chunk_id": "402ff53e87507ca1fd519b4bf96df4358e86335942cb68de0828bfe4925ccebb",
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "4.4 A student under academic warning or probation:",
+          "page": 20,
+          "score": 0.72919166
+        },
+        {
+          "chunk_id": "02f2cc8339b4160b3282998a1bab2323ba796e64049a2a895b0d17fd36cb9178",
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "5.5 If at the end of a semester (including summer semester) CGPA",
+          "page": 24,
+          "score": 0.72007418
+        },
+        {
+          "chunk_id": "3d3c2a8fe968d7e4ccee8f772eafbc3dbaaf663ad54c8cc5d567c5fd2279ef07",
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "7.12 If there are more than one student on same position, the next",
+          "page": 32,
+          "score": 0.7168574999999999
+        }
+      ],
+      "provider": "ollama"
+    },
+    "seconds": 76.92
+  },
+  {
+    "id": "q05",
+    "type": "ordinary",
+    "must_abstain": false,
+    "relevant": [
+      {
+        "source": "fee-structure-page.html",
+        "section": "Tuition Fee (w.e.f. Fall 2026 semester)",
+        "page": 1
+      }
+    ],
+    "expect": "PKR 12,000 per credit hour.",
+    "response": {
+      "request_id": "ce0419b08e674594b52c644e80f69c58",
+      "answer": "Rs. 12,000",
+      "citations": [
+        {
+          "source": "fee-structure-page.html",
+          "section": "Tuition Fee (w.e.f. Fall 2026 semester)",
+          "page": 1
+        },
+        {
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "3.7 Exemption of courses studied at another University cannot be",
+          "page": 14
+        },
+        {
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "1.24 When a student is readmitted with credit exemptions from a",
+          "page": 10
+        },
+        {
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "7.3 Students earning an SGPA of 4.00 with at least 30 credit hours",
+          "page": 30
+        },
+        {
+          "source": "fee-structure-page.html",
+          "section": "3. Tuition Fee is refunded in accordance with the guidelines of Higher Education Commission (HEC).",
+          "page": 1
+        }
+      ],
+      "answered_from_context": true,
+      "confidence": "high",
+      "retrieved": [
+        {
+          "chunk_id": "6d961505749d3637a84b475f6014d94fa614645f54a96647467d8fb9985b0e14",
+          "source": "fee-structure-page.html",
+          "section": "Tuition Fee (w.e.f. Fall 2026 semester)",
+          "page": 1,
+          "score": 0.8357289999999999
+        },
+        {
+          "chunk_id": "1d5908293d95cb4dd44d694054242bea7e280453bbe949ad80e7a9e4018752ae",
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "7.3 Students earning an SGPA of 4.00 with at least 30 credit hours",
+          "page": 30,
+          "score": 0.67260736
+        },
+        {
+          "chunk_id": "c317bca1b83e8bde4f803eb2f87ec8bd98b39278db65a4c768240779202c6f46",
+          "source": "fee-structure-page.html",
+          "section": "3. Tuition Fee is refunded in accordance with the guidelines of Higher Education Commission (HEC).",
+          "page": 1,
+          "score": 0.66345817
+        },
+        {
+          "chunk_id": "e13307c2dd88c90d14be35884bbc7345e9d1c47396c10a4d48a3e28696863a82",
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "3.7 Exemption of courses studied at another University cannot be",
+          "page": 14,
+          "score": 0.65430117
+        },
+        {
+          "chunk_id": "8158f761f81f27fcbe0af8737b211083414834672e1c466302d1b3570584c1b2",
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "1.24 When a student is readmitted with credit exemptions from a",
+          "page": 10,
+          "score": 0.64196754
+        }
+      ],
+      "provider": "ollama"
+    },
+    "seconds": 69.5
+  },
+  {
+    "id": "q06",
+    "type": "ordinary",
+    "must_abstain": false,
+    "relevant": [
+      {
+        "source": "student-handbook-jun-2026.pdf",
+        "section": "4. Acceptable Uses of Generative AI Tools",
+        "page": 50
+      }
+    ],
+    "expect": "Preparatory use is allowed, but generative AI should never be the sole source of information.",
+    "response": {
+      "request_id": "cbf5c7ea38084c29893b848d51457a8d",
+      "answer": "No, Generative AI tools are not academic sources and should never be the only source of information used.",
+      "citations": [
+        {
+          "source": "student-handbook-jun-2026.pdf",
+          "section": "4. Acceptable Uses of Generative AI Tools",
+          "page": 50
+        },
+        {
+          "source": "student-handbook-jun-2026.pdf",
+          "section": "4. Acceptable Uses of Generative AI Tools",
+          "page": 51
+        },
+        {
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "3) The use of generative AI in research projects must be",
+          "page": 51
+        },
+        {
+          "source": "student-handbook-jun-2026.pdf",
+          "section": "4) Generative AI should not be used for the automated",
+          "page": 58
+        },
+        {
+          "source": "student-handbook-jun-2026.pdf",
+          "section": "4) Generative AI should not be used for the automated",
+          "page": 59
+        }
+      ],
+      "answered_from_context": true,
+      "confidence": "high",
+      "retrieved": [
+        {
+          "chunk_id": "a3ef753cbceaff249ccaa582feed13d63b5e706ed3e32c60a1bb7a9de6eef3bd",
+          "source": "student-handbook-jun-2026.pdf",
+          "section": "4. Acceptable Uses of Generative AI Tools",
+          "page": 50,
+          "score": 0.83218193
+        },
+        {
+          "chunk_id": "c3ae43b7d844a2e49801806d4250c499c06700be03a1fc43eb06f819f1c9104b",
+          "source": "student-handbook-jun-2026.pdf",
+          "section": "4. Acceptable Uses of Generative AI Tools",
+          "page": 51,
+          "score": 0.83218193
+        },
+        {
+          "chunk_id": "fdf2f29f86cf1ce92ee5191d588b22796af0ed6c56ccc29493977e57b380c25e",
+          "source": "academic-rules-handbook-jun-2026.pdf",
+          "section": "3) The use of generative AI in research projects must be",
+          "page": 51,
+          "score": 0.80985141
+        },
+        {
+          "chunk_id": "6c9d2ac1aed2107769eb7a7949c18672fd3104ce4a39c6c6099d3be3caf4ac94",
+          "source": "student-handbook-jun-2026.pdf",
+          "section": "4) Generative AI should not be used for the automated",
+          "page": 58,
+          "score": 0.80589586
+        },
+        {
+          "chunk_id": "4e9c6b6959abc9fea25b04d18aa5f8540b71b793e31cce4525f32319e6baa95e",
+          "source": "student-handbook-jun-2026.pdf",
+          "section": "4) Generative AI should not be used for the automated",
+          "page": 59,
+          "score": 0.80589586
+        }
+      ],
+      "provider": "ollama"
+    },
+    "seconds": 82.32
+  }
+]

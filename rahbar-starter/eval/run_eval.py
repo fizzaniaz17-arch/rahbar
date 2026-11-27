@@ -30,6 +30,20 @@ import yaml  # type: ignore[import-untyped]
 HERE = Path(__file__).resolve().parent
 
 
+class EvaluationRequestFailure(Exception):
+    def __init__(
+        self, question_id: str, rows: list[dict], elapsed_seconds: float, error: httpx.HTTPError
+    ) -> None:
+        super().__init__(f"{question_id}: {type(error).__name__}")
+        self.question_id = question_id
+        self.rows = rows
+        self.elapsed_seconds = elapsed_seconds
+        self.error_type = type(error).__name__
+        self.status_code = (
+            error.response.status_code if isinstance(error, httpx.HTTPStatusError) else None
+        )
+
+
 def resolve_cli_path(path: Path, allowed_roots: tuple[Path, ...]) -> Path:
     resolved = path.expanduser().resolve()
     if not any(resolved.is_relative_to(root.resolve()) for root in allowed_roots):
@@ -225,6 +239,7 @@ def parse_arguments() -> argparse.Namespace:
                         help="optional per-question responses for manual review")
     parser.add_argument("--timeout", type=float, default=120.0,
                         help="HTTP timeout in seconds")
+    parser.add_argument("--model", help="model identifier used for this run")
     parser.add_argument("--min-recall5", type=float, default=0,
                         help="optional absolute recall@5 floor for CI fixtures")
     parser.add_argument("--update-baseline", action="store_true",
@@ -252,10 +267,10 @@ def collect_responses(args: argparse.Namespace, questions: list[dict]) -> list[d
             started = time.perf_counter()
             try:
                 response = ask(client, args.api, question["question"])
-            except httpx.TimeoutException as exc:
-                sys.exit(
-                    f"{question['id']}: request timed out ({type(exc).__name__})"
-                )
+            except httpx.HTTPError as exc:
+                raise EvaluationRequestFailure(
+                    question["id"], rows, time.perf_counter() - started, exc
+                ) from exc
             row = {
                 "id": question["id"],
                 "type": question.get("type", "ordinary"),
@@ -271,11 +286,41 @@ def collect_responses(args: argparse.Namespace, questions: list[dict]) -> list[d
                 f"{question['question'][:60]}"
             )
             if args.responses:
+                args.responses.parent.mkdir(parents=True, exist_ok=True)
                 args.responses.write_text(json.dumps(rows, indent=2), encoding="utf-8")
     return rows
 
 
-def finish_evaluation(args: argparse.Namespace, rows: list[dict]) -> int:
+def write_incomplete_evaluation(
+    args: argparse.Namespace,
+    questions: list[dict],
+    failure: EvaluationRequestFailure,
+    elapsed_seconds: float,
+) -> None:
+    partial_metrics = summarise(failure.rows) if failure.rows else None
+    result = {
+        "status": "incomplete",
+        "questions": len(questions),
+        "completed_questions": len(failure.rows),
+        "failed_question": failure.question_id,
+        "failure": {
+            "type": failure.error_type,
+            "http_status": failure.status_code,
+            "request_seconds": round(failure.elapsed_seconds, 2),
+        },
+        "total_execution_seconds": round(elapsed_seconds, 2),
+        "golden": str(args.golden),
+        "golden_sha256": hashlib.sha256(args.golden.read_bytes()).hexdigest(),
+        "model": args.model,
+        "partial_metrics": partial_metrics,
+    }
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.out.write_text(json.dumps(result, indent=2), encoding="utf-8")
+
+
+def finish_evaluation(
+    args: argparse.Namespace, rows: list[dict], elapsed_seconds: float
+) -> int:
     results = summarise(rows)
     baseline = json.loads(args.baseline.read_text()) if args.baseline.exists() else None
     thresholds = load_gate_thresholds(args.gate_config)
@@ -286,7 +331,10 @@ def finish_evaluation(args: argparse.Namespace, rows: list[dict]) -> int:
 
     results["golden"] = str(args.golden)
     results["golden_sha256"] = hashlib.sha256(args.golden.read_bytes()).hexdigest()
+    results["model"] = args.model
     results["timestamp_utc"] = datetime.now(timezone.utc).isoformat()
+    results["status"] = "complete"
+    results["total_execution_seconds"] = round(elapsed_seconds, 2)
     results["gate_thresholds"] = {
         "max_recall5_drop": thresholds.max_recall5_drop,
         "min_citation_validity": thresholds.min_citation_validity,
@@ -303,6 +351,7 @@ def finish_evaluation(args: argparse.Namespace, rows: list[dict]) -> int:
         }
         for row in rows
     ]
+    args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(results, indent=2), encoding="utf-8")
     print(f"\nresults written to {args.out}")
     if args.update_baseline and not failures:
@@ -321,8 +370,16 @@ def finish_evaluation(args: argparse.Namespace, rows: list[dict]) -> int:
 def main() -> int:
     args = parse_arguments()
     questions = load_golden(args.golden)
-    rows = collect_responses(args, questions)
-    return finish_evaluation(args, rows)
+    started = time.perf_counter()
+    try:
+        rows = collect_responses(args, questions)
+    except EvaluationRequestFailure as exc:
+        elapsed = time.perf_counter() - started
+        write_incomplete_evaluation(args, questions, exc, elapsed)
+        print(f"\nincomplete results written to {args.out}")
+        print(f"failed at {exc.question_id}: {exc.error_type}")
+        return 2
+    return finish_evaluation(args, rows, time.perf_counter() - started)
 
 
 if __name__ == "__main__":

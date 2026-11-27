@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import httpx
+import re
 
 from ..config import Settings
 from ..schemas import Passage
@@ -37,7 +38,8 @@ class ChromaRetriever:
         vector = response.json()["embeddings"][0]
         if len(vector) != metadata.get("dimension"):
             raise ValueError("query vector dimension differs from the Chroma collection")
-        result = collection.query(query_embeddings=[vector], n_results=k,
+        candidate_count = max(k * 3, k)
+        result = collection.query(query_embeddings=[vector], n_results=candidate_count,
                                   where={"superseded": False},
                                   include=["documents", "metadatas", "distances"])
         documents = result["documents"]
@@ -52,4 +54,15 @@ class ChromaRetriever:
             for chunk_id, doc, meta, distance in zip(
                 result["ids"][0], documents[0], metadatas[0], distances[0], strict=True)
         ]
-        return passages, vector
+        terms = {
+            term for term in re.findall(r"[a-z0-9]+", question.casefold())
+            if len(term) >= 4
+        }
+        for passage in passages:
+            text_terms = set(re.findall(r"[a-z0-9]+", (
+                passage.section + " " + passage.text
+            ).casefold()))
+            overlap = len(terms & text_terms) / len(terms) if terms else 0.0
+            passage.score = min(1.0, passage.score + 0.08 * overlap)
+        passages.sort(key=lambda passage: passage.score, reverse=True)
+        return passages[:k], vector

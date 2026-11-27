@@ -1,4 +1,6 @@
 import pytest
+import yaml
+from pathlib import Path
 
 from eval.coverage import (
     cosine,
@@ -69,3 +71,11 @@ def test_ollama_url_accepts_approved_local_endpoints(url: str) -> None:
 def test_ollama_url_rejects_unapproved_endpoints(url: str) -> None:
     with pytest.raises(ValueError, match="approved host and port"):
         validate_ollama_url(url)
+
+
+def test_embedding_experiment_has_required_pair_counts() -> None:
+    path = Path(__file__).resolve().parent / "embedding_pairs.yaml"
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+
+    assert len(data["paraphrase_pairs"]) >= 15
+    assert len(data["unrelated_pairs"]) >= 15

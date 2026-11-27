@@ -1,5 +1,7 @@
 from pipeline.models import Chunk
-from pipeline.store import ExistingRecord, reusable_embeddings
+from pipeline.store import ExistingRecord, reusable_embeddings, store
+from pipeline import store as store_module
+from pipeline.config import IndexerSettings
 
 
 def make_chunk(text: str = "policy text", version: str = "2026") -> Chunk:
@@ -47,3 +49,50 @@ def test_new_chunk_is_reembedded() -> None:
 
     assert reusable == {}
     assert pending == [new_chunk]
+
+
+def test_store_upserts_changed_and_deletes_orphaned_chunks(monkeypatch) -> None:
+    class FakeCollection:
+        metadata = {"embed_model": "test-model", "dimension": 2}
+
+        def __init__(self) -> None:
+            self.upserted = []
+            self.deleted = []
+
+        def get(self, include=None):
+            return {"ids": ["chunk-1", "deleted-chunk"]}
+
+        def upsert(self, **kwargs):
+            self.upserted.append(kwargs)
+
+        def delete(self, ids):
+            self.deleted.extend(ids)
+
+        def count(self):
+            return 1
+
+    class FakeClient:
+        def __init__(self) -> None:
+            self.collection = FakeCollection()
+
+        def get_or_create_collection(self, **kwargs):
+            return self.collection
+
+    fake_client = FakeClient()
+    monkeypatch.setattr(store_module, "get_client", lambda _settings: fake_client)
+    settings = IndexerSettings(
+        embed_model="test-model",
+        chroma_host="unused",
+        chroma_port=8000,
+        collection="test",
+        corpus_dir="/unused",
+        state_dir="/unused",
+        chunk_size=100,
+        chunk_overlap=10,
+        ollama_url="http://localhost",
+    )
+    chunk = make_chunk(text="changed policy")
+
+    assert store([chunk], [[0.5, 0.5]], settings) == 1
+    assert fake_client.collection.upserted
+    assert fake_client.collection.deleted == ["deleted-chunk"]

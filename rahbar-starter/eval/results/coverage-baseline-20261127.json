@@ -1,0 +1,441 @@
+{
+  "threshold": 0.85,
+  "total": 44,
+  "covered": 15,
+  "uncovered": 29,
+  "coverage": 0.3409090909090909,
+  "uncovered_topics": [
+    "academic_warning",
+    "accommodation",
+    "attendance",
+    "bookstore",
+    "cafeteria",
+    "degree_duration",
+    "faculty_statistics",
+    "generative_ai",
+    "health_services",
+    "hostel_allocation",
+    "hostel_forms",
+    "network_access",
+    "parking",
+    "public_transit",
+    "refund",
+    "sports_facilities",
+    "student_services",
+    "summer_courses",
+    "summer_repeat",
+    "transport_schedule",
+    "withdrawal"
+  ],
+  "similarity_distribution": {
+    "min": 0.47132249797144776,
+    "max": 0.9783999254318425,
+    "mean": 0.7325609353445386,
+    "p50": 0.7705919200914664,
+    "p95": 0.9501653792493451
+  },
+  "queries": [
+    {
+      "id": "live01",
+      "query": "What happens when a student misses the course attendance requirement?",
+      "domain": "in_domain",
+      "topic": "attendance",
+      "nearest_golden_id": "q01",
+      "similarity": 0.9127767101952369,
+      "covered": true
+    },
+    {
+      "id": "live02",
+      "query": "How much attendance is required under clause 1.21, and what can the HoD excuse?",
+      "domain": "in_domain",
+      "topic": "attendance",
+      "nearest_golden_id": "q15",
+      "similarity": 0.8213841991076493,
+      "covered": false
+    },
+    {
+      "id": "live03",
+      "query": "What is the longest time allowed to finish a bachelor's degree?",
+      "domain": "in_domain",
+      "topic": "degree_duration",
+      "nearest_golden_id": "q02",
+      "similarity": 0.8092480840201997,
+      "covered": false
+    },
+    {
+      "id": "live04",
+      "query": "Can the statutory bodies grant extra time beyond the maximum degree duration?",
+      "domain": "in_domain",
+      "topic": "degree_duration",
+      "nearest_golden_id": "q17",
+      "similarity": 0.7679594533326266,
+      "covered": false
+    },
+    {
+      "id": "live05",
+      "query": "Who must countersign and approve an undergraduate course withdrawal application?",
+      "domain": "in_domain",
+      "topic": "withdrawal",
+      "nearest_golden_id": "q03",
+      "similarity": 0.8273920643199596,
+      "covered": false
+    },
+    {
+      "id": "live06",
+      "query": "What signatures are required before I can withdraw from a course?",
+      "domain": "in_domain",
+      "topic": "withdrawal",
+      "nearest_golden_id": "q03",
+      "similarity": 0.8501047271220107,
+      "covered": true
+    },
+    {
+      "id": "live07",
+      "query": "When does the academic-warning count reset for an undergraduate?",
+      "domain": "in_domain",
+      "topic": "academic_warning",
+      "nearest_golden_id": "q04",
+      "similarity": 0.9507984184058913,
+      "covered": true
+    },
+    {
+      "id": "live08",
+      "query": "What CGPA is needed to reset an academic warning?",
+      "domain": "in_domain",
+      "topic": "academic_warning",
+      "nearest_golden_id": "q04",
+      "similarity": 0.7845606722646814,
+      "covered": false
+    },
+    {
+      "id": "live09",
+      "query": "What is the BS tuition charge for each credit hour in 2026-27?",
+      "domain": "in_domain",
+      "topic": "tuition",
+      "nearest_golden_id": "q05",
+      "similarity": 0.9608854452589053,
+      "covered": true
+    },
+    {
+      "id": "live10",
+      "query": "How much does one BS credit hour cost in the Fall 2026 fee schedule?",
+      "domain": "in_domain",
+      "topic": "tuition",
+      "nearest_golden_id": "q05",
+      "similarity": 0.8574601559169748,
+      "covered": true
+    },
+    {
+      "id": "live11",
+      "query": "May generative AI be my only source when preparing research?",
+      "domain": "in_domain",
+      "topic": "generative_ai",
+      "nearest_golden_id": "q06",
+      "similarity": 0.9465781573622503,
+      "covered": true
+    },
+    {
+      "id": "live12",
+      "query": "Can students use ChatGPT without consulting any other information source?",
+      "domain": "in_domain",
+      "topic": "generative_ai",
+      "nearest_golden_id": "q23",
+      "similarity": 0.540764475095539,
+      "covered": false
+    },
+    {
+      "id": "live13",
+      "query": "Which activities qualify as faculty entrepreneurship under the start-up policy?",
+      "domain": "in_domain",
+      "topic": "faculty_startups",
+      "nearest_golden_id": "q07",
+      "similarity": 0.9062996889900875,
+      "covered": true
+    },
+    {
+      "id": "live14",
+      "query": "Does holding substantial equity in a technical start-up count as faculty involvement?",
+      "domain": "in_domain",
+      "topic": "faculty_startups",
+      "nearest_golden_id": "q07",
+      "similarity": 0.8541421275162742,
+      "covered": true
+    },
+    {
+      "id": "live15",
+      "query": "How many courses may an undergraduate repeat during summer?",
+      "domain": "in_domain",
+      "topic": "summer_repeat",
+      "nearest_golden_id": "q08",
+      "similarity": 0.9783999254318425,
+      "covered": true
+    },
+    {
+      "id": "live16",
+      "query": "Can a student repeat the lab attached to a summer repeat course?",
+      "domain": "in_domain",
+      "topic": "summer_repeat",
+      "nearest_golden_id": "q18",
+      "similarity": 0.7732243868503061,
+      "covered": false
+    },
+    {
+      "id": "live17",
+      "query": "How many weeks are in the current summer semester?",
+      "domain": "in_domain",
+      "topic": "summer_duration",
+      "nearest_golden_id": "q09",
+      "similarity": 0.9238351353715266,
+      "covered": true
+    },
+    {
+      "id": "live18",
+      "query": "What is the duration of the undergraduate summer session?",
+      "domain": "in_domain",
+      "topic": "summer_duration",
+      "nearest_golden_id": "q09",
+      "similarity": 0.8529656835347702,
+      "covered": true
+    },
+    {
+      "id": "live19",
+      "query": "Are new electives offered in summer or only repeat subjects?",
+      "domain": "in_domain",
+      "topic": "summer_courses",
+      "nearest_golden_id": "q24",
+      "similarity": 0.8354497314198638,
+      "covered": false
+    },
+    {
+      "id": "live20",
+      "query": "Can I take a new course in summer to complete my degree?",
+      "domain": "in_domain",
+      "topic": "summer_courses",
+      "nearest_golden_id": "q24",
+      "similarity": 0.8720431426939962,
+      "covered": true
+    },
+    {
+      "id": "live21",
+      "query": "How many grade points does a B+ receive in a BS program?",
+      "domain": "in_domain",
+      "topic": "grading",
+      "nearest_golden_id": "q12",
+      "similarity": 0.9425059098376668,
+      "covered": true
+    },
+    {
+      "id": "live22",
+      "query": "What is the grade-point value of B plus?",
+      "domain": "in_domain",
+      "topic": "grading",
+      "nearest_golden_id": "q12",
+      "similarity": 0.8607323073893829,
+      "covered": true
+    },
+    {
+      "id": "live23",
+      "query": "What is the minimum attendance percentage for final-exam eligibility?",
+      "domain": "in_domain",
+      "topic": "attendance",
+      "nearest_golden_id": "q11",
+      "similarity": 0.6930970688751614,
+      "covered": false
+    },
+    {
+      "id": "live24",
+      "query": "Does a medical certificate remove the course attendance requirement?",
+      "domain": "in_domain",
+      "topic": "attendance",
+      "nearest_golden_id": "q01",
+      "similarity": 0.759749359053634,
+      "covered": false
+    },
+    {
+      "id": "live25",
+      "query": "How should students disclose assistance from generative AI?",
+      "domain": "in_domain",
+      "topic": "generative_ai",
+      "nearest_golden_id": "q23",
+      "similarity": 0.9040150429975585,
+      "covered": true
+    },
+    {
+      "id": "live26",
+      "query": "Can an instructor require students to complete an assessment without AI?",
+      "domain": "in_domain",
+      "topic": "generative_ai",
+      "nearest_golden_id": "q23",
+      "similarity": 0.6262461141874485,
+      "covered": false
+    },
+    {
+      "id": "live27",
+      "query": "How many full-time faculty members are listed for Islamabad?",
+      "domain": "in_domain",
+      "topic": "faculty_statistics",
+      "nearest_golden_id": "q21",
+      "similarity": 0.5739916380953658,
+      "covered": false
+    },
+    {
+      "id": "live28",
+      "query": "What total faculty count is reported across campuses?",
+      "domain": "in_domain",
+      "topic": "faculty_statistics",
+      "nearest_golden_id": "q18",
+      "similarity": 0.5950981373552136,
+      "covered": false
+    },
+    {
+      "id": "live29",
+      "query": "How do the current academic rules define a course withdrawal?",
+      "domain": "in_domain",
+      "topic": "withdrawal",
+      "nearest_golden_id": "q03",
+      "similarity": 0.7579470943535774,
+      "covered": false
+    },
+    {
+      "id": "live30",
+      "query": "What is the deadline to withdraw from a course?",
+      "domain": "in_domain",
+      "topic": "withdrawal",
+      "nearest_golden_id": "q03",
+      "similarity": 0.8179089136157371,
+      "covered": false
+    },
+    {
+      "id": "live31",
+      "query": "What is the fee refund schedule for tuition payments?",
+      "domain": "in_domain",
+      "topic": "refund",
+      "nearest_golden_id": "q05",
+      "similarity": 0.6360539983469262,
+      "covered": false
+    },
+    {
+      "id": "live32",
+      "query": "What academic action follows two consecutive warning semesters?",
+      "domain": "in_domain",
+      "topic": "academic_warning",
+      "nearest_golden_id": "q04",
+      "similarity": 0.7666336512856505,
+      "covered": false
+    },
+    {
+      "id": "live33",
+      "query": "How many priority points are awarded for Islamabad hostel room allocation?",
+      "domain": "out_of_domain",
+      "topic": "hostel_allocation",
+      "nearest_golden_id": "q12",
+      "similarity": 0.5436658124736952,
+      "covered": false
+    },
+    {
+      "id": "live34",
+      "query": "Where can I download the hostel room-change form?",
+      "domain": "out_of_domain",
+      "topic": "hostel_forms",
+      "nearest_golden_id": "q03",
+      "similarity": 0.5354528061290331,
+      "covered": false
+    },
+    {
+      "id": "live35",
+      "query": "What time does the campus shuttle leave for the airport?",
+      "domain": "out_of_domain",
+      "topic": "transport_schedule",
+      "nearest_golden_id": "q22",
+      "similarity": 0.5220505915032215,
+      "covered": false
+    },
+    {
+      "id": "live36",
+      "query": "How can I connect a personal laptop to campus Wi-Fi?",
+      "domain": "out_of_domain",
+      "topic": "network_access",
+      "nearest_golden_id": "q22",
+      "similarity": 0.47132249797144776,
+      "covered": false
+    },
+    {
+      "id": "live37",
+      "query": "Which parking areas are open to students after 6 pm?",
+      "domain": "out_of_domain",
+      "topic": "parking",
+      "nearest_golden_id": "q18",
+      "similarity": 0.5486915668011462,
+      "covered": false
+    },
+    {
+      "id": "live38",
+      "query": "What are the opening hours of the Islamabad campus health clinic?",
+      "domain": "out_of_domain",
+      "topic": "health_services",
+      "nearest_golden_id": "q22",
+      "similarity": 0.5114513870862922,
+      "covered": false
+    },
+    {
+      "id": "live39",
+      "query": "Where can I reserve a badminton court on campus?",
+      "domain": "out_of_domain",
+      "topic": "sports_facilities",
+      "nearest_golden_id": "q18",
+      "similarity": 0.5292558267150453,
+      "covered": false
+    },
+    {
+      "id": "live40",
+      "query": "Does the university provide an emergency laptop-loan service?",
+      "domain": "out_of_domain",
+      "topic": "student_services",
+      "nearest_golden_id": "q22",
+      "similarity": 0.5550155349752045,
+      "covered": false
+    },
+    {
+      "id": "live41",
+      "query": "When does the campus cafeteria stop serving dinner?",
+      "domain": "out_of_domain",
+      "topic": "cafeteria",
+      "nearest_golden_id": "q04",
+      "similarity": 0.5290027727058323,
+      "covered": false
+    },
+    {
+      "id": "live42",
+      "query": "How do I apply for campus accommodation as a visiting researcher?",
+      "domain": "out_of_domain",
+      "topic": "accommodation",
+      "nearest_golden_id": "q03",
+      "similarity": 0.545036338251292,
+      "covered": false
+    },
+    {
+      "id": "live43",
+      "query": "Where is the nearest public bus stop outside the university?",
+      "domain": "out_of_domain",
+      "topic": "public_transit",
+      "nearest_golden_id": "q22",
+      "similarity": 0.4841243680413145,
+      "covered": false
+    },
+    {
+      "id": "live44",
+      "query": "Can the campus bookstore order a specific foreign-language novel?",
+      "domain": "out_of_domain",
+      "topic": "bookstore",
+      "nearest_golden_id": "q18",
+      "similarity": 0.4973600329022595,
+      "covered": false
+    }
+  ],
+  "timestamp_utc": "2026-11-27T12:44:15.588983+00:00",
+  "embedding_model": "nomic-embed-text",
+  "golden_sha256": "3aca61183548e80e65fdc5bf78ff757b03d37434d86477e0a3e215be0e9fafbf",
+  "live_sha256": "be92cd06a49aec036512874d5327c76579ea77e155132da5da960d3c480a92ec",
+  "minimum_coverage": 0.85,
+  "gate": "FAIL"
+}

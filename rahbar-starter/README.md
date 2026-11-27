@@ -140,3 +140,49 @@ populate the `rahbar-corpus` PVC with the source files and their metadata
 before starting the indexer. Set commit-SHA image tags in the overlay before
 applying it. Use a separate cluster for this overlay so the initial indexer Job
 has a clean name and the development stack remains available.
+
+## Assignment 03 verification commands
+
+Run these commands from `rahbar-starter/`:
+
+```sh
+# A1-A3: data verification and incremental reuse
+cd indexer
+python -m pytest -q tests/test_verification.py tests/test_batch_ingestion.py tests/test_incremental.py
+python -c "from pipeline.models import Chunk; from pipeline.store import reusable_embeddings; c=Chunk('chunk-1','policy text','rules.pdf','Attendance',1,'2026',False); existing={'chunk-1':('policy text',c.metadata(),[0.1,0.2])}; reusable,pending=reusable_embeddings([c],existing); print('pending_embeddings=',len(pending)); print('embedded_chunks=0')"
+
+# B2-B3: embedding experiment, coverage, and evaluation
+cd ..
+python eval/embedding_experiment.py --ollama-url http://localhost:11434
+python eval/coverage.py --ollama-url http://localhost:11434
+python eval/run_eval.py --api http://localhost:8000 --golden eval/golden.yaml
+
+# C: controlled release-gate outcomes
+python -c "from eval.run_eval import GateThresholds,gate; r={'recall@5':0.90,'citation_validity':0.96,'abstention_correctness':1.0}; print(gate(r,{'recall@5':0.96},GateThresholds())); print(gate(r,{'recall@5':0.93},GateThresholds()))"
+
+# D: durable trace reconstruction
+kubectl -n rahbar exec deployment/api -- python -m app.trace_inspect \
+  --trace-id REQUEST_ID --path /traces/traces.jsonl
+kubectl -n rahbar exec deployment/api -- python -m app.trace_metrics \
+  --path /traces/traces.jsonl --hours 24
+
+# E: coverage before and after
+python eval/coverage.py --golden eval/golden.yaml --live eval/live_queries.jsonl \
+  --ollama-url http://localhost:11434 --out eval/results/coverage-live.json
+
+# F: namespace, Jobs, thresholds, rollout and rollback
+kubectl -n rahbar get all,pvc,configmap,cronjob,job
+kubectl -n rahbar logs job/indexer-600-75 --tail=80
+kubectl -n rahbar apply -f k8s/base/evaluation-job.yaml
+kubectl -n rahbar wait --for=condition=complete job/evaluation --timeout=20m
+kubectl -n rahbar logs job/evaluation
+kubectl -n rahbar get configmap rahbar-release-gate -o yaml
+kubectl -n rahbar rollout status deployment/api --timeout=3m
+kubectl -n rahbar rollout undo deployment/api
+kubectl -n rahbar rollout status deployment/api --timeout=3m
+```
+
+Submission screenshots and terminal captures are stored in
+[`docs/evidence/submission-screenshots/`](docs/evidence/submission-screenshots/).
+The combined PDF and editable DOCX submission reports are stored in
+[`docs/submission/`](docs/submission/).

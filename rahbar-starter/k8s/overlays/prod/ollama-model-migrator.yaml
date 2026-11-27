@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ollama-model-migrator
+  namespace: rahbar
+spec:
+  restartPolicy: Never
+  automountServiceAccountToken: false
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 10001
+    runAsGroup: 10001
+    fsGroup: 10001
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+  - name: migrator
+    image: ollama/ollama:0.9.6
+    imagePullPolicy: IfNotPresent
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop:
+        - ALL
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+        ephemeral-storage: 64Mi
+      limits:
+        cpu: "500m"
+        memory: 512Mi
+        ephemeral-storage: 512Mi
+    command:
+    - /bin/sh
+    - -c
+    - sleep 3600
+    volumeMounts:
+    - name: models
+      mountPath: /root/.ollama
+  volumes:
+  - name: models
+    persistentVolumeClaim:
+      claimName: ollama-models

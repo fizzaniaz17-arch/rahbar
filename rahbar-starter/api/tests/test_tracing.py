@@ -52,6 +52,9 @@ def test_trace_reconstructs_prompt_and_marks_injection() -> None:
     assert trace["retrieved"][0]["document_version"] == "2026"
     assert trace["prompt"][1]["content"]
     assert trace["trace_schema_version"] == 1
+    assert trace["retrieval_parameters"]["top_k"] == 5
+    assert trace["reranker"] == "none"
+    assert trace["llm"]["num_predict"] == 128
 
 
 def test_cache_hit_trace_does_not_claim_a_prompt_was_sent() -> None:

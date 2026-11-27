@@ -79,6 +79,8 @@ jobs:
             docker build -t "rahbar-$component:dev" "$component"
             kind load docker-image "rahbar-$component:dev" --name rahbar
           done
+          docker build -t rahbar-evaluation:dev eval
+          kind load docker-image rahbar-evaluation:dev --name rahbar
       - name: Apply development overlay and wait for readiness
         run: |
           kubectl apply -k k8s/overlays/dev
@@ -132,7 +134,8 @@ jobs:
             --from-file=eval/fixtures/academic-rules-2023.md \
             --from-file=eval/fixtures/academic-rules-2026.md \
             --from-file=eval/fixtures/fees-2026.md
-          kubectl -n rahbar create deployment ollama --image=ollama/ollama:0.9.6
+          kubectl apply -f k8s/overlays/prod/ollama-models-pvc.yaml
+          kubectl apply -f k8s/overlays/prod/ollama-deployment.yaml
           kubectl -n rahbar expose deployment ollama --port=11434
           kubectl -n rahbar rollout status deployment/ollama --timeout=5m
           pull_with_retry() {
@@ -159,12 +162,14 @@ jobs:
             docker build -t "rahbar-$component:dev" "$component"
             kind load docker-image "rahbar-$component:dev" --name rahbar
           done
+          docker build -t rahbar-evaluation:dev eval
+          kind load docker-image rahbar-evaluation:dev --name rahbar
       - name: Deploy fixture overlay
         run: |
           kubectl apply -k k8s/overlays/eval
           kubectl -n rahbar set env deployment/api LLM_MODEL=llama3.2:3b TEMPERATURE=0
           kubectl -n rahbar rollout status statefulset/chroma --timeout=2m
-          kubectl -n rahbar wait --for=condition=complete job/indexer --timeout=5m
+          kubectl -n rahbar wait --for=condition=complete job/indexer --timeout=12m
           kubectl -n rahbar rollout status deployment/api --timeout=3m
       - name: Evaluate live grounded API
         run: |
